@@ -1,0 +1,7 @@
+This project aims to collect implementations of missing features in OS/2 
+kLIBC. And a header and a source pair should be a complete set of the missing 
+feature implementation.
+
+If you want to use codes involed in this project, just copy and paste the 
+relevant codes of a header and a source. But you should respect the license of 
+each sources.
