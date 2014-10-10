@@ -22,6 +22,11 @@ call checkCC 'network/getaddrinfo.h', 'network/getaddrinfo.c', ,
              'getaddrinfo( 0, 0, 0, 0 );' || g.sNl ||,
              'freeaddrinfo( 0 );' || g.sNl ||,
              'getnameinfo( 0, 0, 0, 0, 0, 0, 0 );';
+call checkCC 'memory/mmap.h', 'memory/mmap.c', ,
+             'mmap( 0, 0, 0, 0, 0, 0);' || g.sNl ||,
+             'mprotect( 0, 0, 0);' || g.sNl ||,
+             'munmap( 0, 0 );' || g.sNl ||,
+             'mmap_anon( 0, 0, 0, 0, 0);';
 
 say 'Check completed';
 
