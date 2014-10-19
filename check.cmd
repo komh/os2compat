@@ -27,6 +27,7 @@ call checkCC 'memory/mmap.h', 'memory/mmap.c', ,
              'mprotect( 0, 0, 0);' || g.sNl ||,
              'munmap( 0, 0 );' || g.sNl ||,
              'mmap_anon( 0, 0, 0, 0, 0);';
+call checkCC , 'process/spawnvpe.c', 'spawnvpe( 0, 0, 0, 0 );';
 
 say 'Check completed';
 
