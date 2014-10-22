@@ -52,7 +52,7 @@ checkCC: procedure expose G.
 
     call lineout sTestFile,, 1;
 
-    do until words(sHeaders) = 0
+    do while words(sHeaders) > 0
         parse var sHeaders sHeader sHeaders;
         call lineout sTestFile, '#include "' || sHeader || '"';
     end;
