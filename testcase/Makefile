@@ -73,7 +73,9 @@ RCFLAGS :=
 
 BIN_PROGRAMS := mmap-1 \
                 spawnvpe-1 \
-                spawnvpe-1-child
+                spawnvpe-1-child \
+                non-block-pipe-1 \
+                non-block-pipe-2
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -83,6 +85,12 @@ spawnvpe-1_CFLAGS := -I../process
 
 spawnvpe-1-child_SRCS    := spawnvpe-1-child.c
 spawnvpe-1-child_LDFLAGS := -Zargs-resp
+
+non-block-pipe-1_SRCS := non-block-pipe-1.c ../io/non-block-pipe.c
+non-block-pipe-1_CFLAGS := -I../io
+
+non-block-pipe-2_SRCS := non-block-pipe-1.c ../io/non-block-pipe.c
+non-block-pipe-2_CFLAGS := -I../io
 
 # 1. specify a list of libraries without an extension with
 #
