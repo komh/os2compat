@@ -71,7 +71,9 @@ RCFLAGS :=
 #   program_DEF         for .def file
 #   program_EXTRADEPS   for extra dependencies
 
-BIN_PROGRAMS := mmap-1 spawnvpe-1 spawnvpe-1-child
+BIN_PROGRAMS := mmap-1 \
+                spawnvpe-1 \
+                spawnvpe-1-child
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
