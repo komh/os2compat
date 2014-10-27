@@ -96,8 +96,8 @@ int named_pipe( int *ph )
     ph[ 1 ] = _imphandle( hpipeWrite );
 
     /* Default to blocking mode */
-    DosSetNPHState( ph[ 0 ], NP_READMODE_BYTE );
-    DosSetNPHState( ph[ 1 ], NP_READMODE_BYTE );
+    DosSetNPHState( ph[ 0 ], NP_WAIT | NP_READMODE_BYTE );
+    DosSetNPHState( ph[ 1 ], NP_WAIT | NP_READMODE_BYTE );
 
     return 0;
 
