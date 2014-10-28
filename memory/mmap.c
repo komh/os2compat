@@ -58,6 +58,10 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
     void  *ret;
 
+    /* off should be multiple of a page size */
+    if( off % getpagesize())
+        return MAP_FAILED;
+
     if( prot & PROT_WRITE )
     {
         if( flags & MAP_SHARED )
