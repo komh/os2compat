@@ -106,10 +106,10 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
     if( !( flags & MAP_ANON ))
     {
-        int pos;
+        int pos = lseek( fildes, 0, SEEK_CUR );
 
         /* Now read in the file */
-        if(( pos = lseek( fildes, off, SEEK_SET )) == -1)
+        if( lseek( fildes, off, SEEK_SET ) == -1)
         {
             munmap( ret, len );
 
