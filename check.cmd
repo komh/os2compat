@@ -53,7 +53,7 @@ checkCC: procedure expose G.
     sTestFile = sTestFileBase || '.c';
     sTestFileExe = sTestFileBase || '.exe';
 
-    address cmd 'del' sTestFile '>nul';
+    address cmd 'del' sTestFile '>nul 2>&1';
 
     call lineout sTestFile,, 1;
 
