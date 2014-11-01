@@ -34,13 +34,20 @@ static os2_mmap *m_mmap = NULL;
 void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 {
     os2_mmap *new_mmap;
+    int pagesize;
 
     ULONG rc;
 
     void  *ret;
 
+    pagesize = getpagesize();
+
+    /* addr should be multiple of a page size if MAP_FIXED */
+    if(( flags & MAP_FIXED ) && (( uintptr_t )addr % pagesize ))
+        return MAP_FAILED;
+
     /* off should be multiple of a page size */
-    if( off % getpagesize())
+    if( off % pagesize)
         return MAP_FAILED;
 
     if( prot & PROT_WRITE )
@@ -120,6 +127,9 @@ int munmap( void *addr, size_t len )
 {
     os2_mmap *mm;
 
+    if(( uintptr_t )addr % getpagesize())
+        return -1;
+
     for( mm = m_mmap; mm; mm = mm->prev )
     {
         if( mm->addr == addr )
@@ -152,6 +162,9 @@ int munmap( void *addr, size_t len )
 int mprotect( void *addr, size_t len, int prot )
 {
     os2_mmap *mm;
+
+    if(( uintptr_t )addr % getpagesize())
+        return -1;
 
     for( mm = m_mmap; mm; mm = mm->prev )
     {
