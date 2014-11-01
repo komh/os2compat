@@ -35,7 +35,6 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 {
     os2_mmap *new_mmap;
 
-    ULONG fl;
     ULONG rc;
 
     void  *ret;
@@ -56,6 +55,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
     if( flags & MAP_FIXED )
     {
         ULONG cb;
+        ULONG fl;
 
         cb = len;
         rc = DosQueryMem( addr, &cb, &fl );
@@ -106,22 +106,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         lseek( fildes, pos, SEEK_SET );  /* Restore the file pointer */
     }
 
-    fl = 0;
-
-    if( prot & PROT_READ )
-        fl |= PAG_READ;
-
-    if( prot & PROT_WRITE )
-        fl |= PAG_WRITE;
-
-    if( prot & PROT_EXEC )
-        fl |= PAG_EXECUTE;
-
-    if( prot & PROT_NONE )
-        fl |= PAG_GUARD;
-
-    rc = DosSetMem( ret, len, fl );
-    if( rc )
+    if( mprotect( ret, len, prot ))
     {
         munmap( ret, len );
 
