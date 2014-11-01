@@ -187,8 +187,8 @@ int mprotect( void *addr, size_t len, int prot )
         if( prot & PROT_EXEC )
             fl |= PAG_EXECUTE;
 
-        if( prot & PROT_NONE )
-            fl |= PAG_GUARD;
+        if( !fl )            /* PROT_NONE ? */
+            fl |= PAG_READ;  /* Set READ flag if PROT_NONE */
 
         if( DosSetMem( addr, len, fl ) == 0 )
             return 0;
