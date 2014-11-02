@@ -189,7 +189,7 @@ int mprotect( void *addr, size_t len, int prot )
 
     for( mm = m_mmap; mm; mm = mm->prev )
     {
-        if( mm->addr == addr )
+        if( mm->addr <= addr && addr + len <= mm->addr + mm->len )
             break;
     }
 
