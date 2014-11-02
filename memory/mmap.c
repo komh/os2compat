@@ -32,6 +32,36 @@ typedef struct os2_mmap_s
 static os2_mmap *m_mmap = NULL;
 
 /**
+ * Read a file into a memory.
+ * @param[in]  fd  file descriptor
+ * @param[in]  off offset of a file
+ * @param[out] buf a memory to be transferred from a file
+ * @param[in]  len length to read in bytes
+ * @return 0 on success, or -1 on error
+ */
+static int readFromFile( int fd, off_t off, void *buf, size_t len )
+{
+    int pos = lseek( fd, 0, SEEK_CUR ); /* Get a current position */
+
+    if( pos == -1 )
+        return -1;
+
+    /* Seek to offset off */
+    if( lseek( fd, off, SEEK_SET ) == -1)
+        return -1;
+
+    /* Read in a file */
+    if( read( fd, buf, len ) == -1 )
+        return -1;
+
+    /* Restore the position */
+    if( lseek( fd, pos, SEEK_SET ) == -1 )
+        return -1;
+
+    return 0;
+}
+
+/**
  * Map a file to a memory.
  * @remark MAP_FIXED will succeed only if [addr, addr + len) is already
  * allocated. MAP_SHARED is not supported.
@@ -114,18 +144,12 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
     if( !( flags & MAP_ANON ))
     {
-        int pos = lseek( fildes, 0, SEEK_CUR );
-
-        /* Now read in the file */
-        if( lseek( fildes, off, SEEK_SET ) == -1)
+        if( readFromFile( fildes, off, ret, len ) == -1 )
         {
             munmap( ret, len );
 
             return MAP_FAILED;
         }
-
-        read( fildes, ret, len );
-        lseek( fildes, pos, SEEK_SET );  /* Restore the file pointer */
     }
 
     if( mprotect( ret, len, prot ))
