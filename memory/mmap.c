@@ -35,6 +35,8 @@ static os2_mmap *m_mmap = NULL;
  * Map a file to a memory.
  * @remark MAP_FIXED will succeed only if [addr, addr + len) is already
  * allocated. MAP_SHARED is not supported.
+ * @warning If a translation mode of fildes is a text mode, len and a real
+ * length read may be different.
  */
 void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 {
