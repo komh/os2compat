@@ -149,7 +149,7 @@ int munmap( void *addr, size_t len )
 
     for( mm = m_mmap; mm; mm = mm->prev )
     {
-        if( mm->addr == addr )
+        if( mm->addr == addr && mm->len == len )
             break;
     }
 
