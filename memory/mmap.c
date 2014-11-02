@@ -92,6 +92,14 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
     }
 
     new_mmap = malloc( sizeof( os2_mmap ));
+    if( !new_mmap )
+    {
+        if( !( flags & MAP_FIXED ))
+            DosFreeMem( ret );
+
+        return MAP_FAILED;
+    }
+
     new_mmap->addr  = ret;
     new_mmap->len   = len;
     new_mmap->flags = flags;
