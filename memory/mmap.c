@@ -87,6 +87,10 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
     if( off % pagesize)
         return MAP_FAILED;
 
+    if(( flags & ( MAP_SHARED | MAP_PRIVATE )) == ( MAP_SHARED | MAP_PRIVATE )
+       || !( flags & ( MAP_SHARED | MAP_PRIVATE )))
+        return MAP_FAILED;
+
     if( prot & PROT_WRITE )
     {
         if( flags & MAP_SHARED )
