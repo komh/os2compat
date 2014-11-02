@@ -23,14 +23,19 @@
 
 typedef struct os2_mmap_s
 {
-    void    *addr;
-    size_t  len;
-    int     flags;
-    struct os2_mmap_s *prev;
-    struct os2_mmap_s *next;
+    void    *addr;              /**< address of mapped memory */
+    size_t  len;                /**< length of mapped memory */
+    int     flags;              /**< protection flags of mapped memory */
+    struct os2_mmap_s *prev;    /**< previous list of os2_mmap */
+    struct os2_mmap_s *next;    /**< next list of os2_mmap */
 } os2_mmap;
 static os2_mmap *m_mmap = NULL;
 
+/**
+ * Map a file to a memory.
+ * @remark MAP_FIXED will succeed only if [addr, addr + len) is already
+ * allocated. MAP_SHARED is not supported.
+ */
 void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 {
     os2_mmap *new_mmap;
@@ -123,6 +128,10 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
     return ret;
 }
 
+/**
+ * Unmap mapped memory by mmap().
+ * @remark Partial unmapping is not supported.
+ */
 int munmap( void *addr, size_t len )
 {
     os2_mmap *mm;
@@ -159,6 +168,10 @@ int munmap( void *addr, size_t len )
     return -1;
 }
 
+/**
+ * Set memory protection flags.
+ * @bug Set READ flag if PROT_NONE. OS/2 has no equivalent attributes to it.
+ */
 int mprotect( void *addr, size_t len, int prot )
 {
     os2_mmap *mm;
@@ -197,6 +210,10 @@ int mprotect( void *addr, size_t len, int prot )
     return -1;
 }
 
+/**
+ * Anonymous mmap().
+ * @see mmap().
+ */
 void *mmap_anon( void *addr, size_t len, int prot, int flags, off_t off )
 {
     return mmap( addr, len, prot, flags | MAP_ANON, -1, off );
