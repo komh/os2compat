@@ -144,11 +144,11 @@ endef
 	$(QUIET)$(CXX) $(CXXFLAGS) -MM -MP -MT "$(@:.d=$(OBJ_EXT)) $@" -MF $@ $<
 
 %.o : %.c
-	$(if $(QUIET),, @echo [CC] $@)
+	$(if $(QUIET), @echo [CC] $@)
 	$(QUIET)$(CC) $(CFLAGS) -c -o $@ $<
 
 %.obj : %.c
-	$(if $(QUIET),, @echo [CC] $@)
+	$(if $(QUIET), @echo [CC] $@)
 	$(QUIET)$(CC) -Zomf $(CFLAGS) -c -o $@ $<
 
 %.o : %.cpp
