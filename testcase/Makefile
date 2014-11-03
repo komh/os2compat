@@ -72,6 +72,9 @@ RCFLAGS :=
 #   program_EXTRADEPS   for extra dependencies
 
 BIN_PROGRAMS := mmap-1 \
+                mmap-2 \
+                mmap-2-child \
+                mmap-3 \
                 spawnvpe-1 \
                 spawnvpe-1-child \
                 non-block-pipe-1 \
@@ -81,6 +84,15 @@ BIN_PROGRAMS := mmap-1 \
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
+
+mmap-2_SRCS   := mmap-2.c ../memory/mmap.c
+mmap-2_CFLAGS := -I../memory
+
+mmap-2-child_SRCS   := mmap-2-child.c ../memory/mmap.c
+mmap-2-child_CFLAGS := -I../memory
+
+mmap-3_SRCS   := mmap-3.c ../memory/mmap.c
+mmap-3_CFLAGS := -I../memory
 
 spawnvpe-1_SRCS   := spawnvpe-1.c ../process/spawnvpe.c
 spawnvpe-1_CFLAGS := -I../process
