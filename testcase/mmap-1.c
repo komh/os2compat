@@ -32,7 +32,7 @@ int main( void )
     int len;
     int rc = 0;
 
-    fd = open( name, O_WRONLY | O_CREAT | O_BINARY );
+    fd = open( name, O_WRONLY | O_CREAT | O_BINARY, S_IREAD | S_IWRITE );
 
     write( fd, msg, strlen( msg ));
 
