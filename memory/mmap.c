@@ -234,7 +234,8 @@ static int mmapAddAnonMem( void *addr, size_t len, int prot )
     pulRefCount = pAnonList;
 
     pmal    = ( PMMAPANONLIST )( pulRefCount + 1 );
-    pmalEnd = pAnonList + SHARED_NAME_MMAP_ANON_SIZE;
+    pmalEnd = ( PMMAPANONLIST )
+              (( PBYTE )pAnonList + SHARED_NAME_MMAP_ANON_SIZE);
 
     /* find an empty slot */
     while( pmal + 1 <= pmalEnd && pmal->addr )
@@ -276,7 +277,8 @@ static int mmapRemoveAnonMem( void *addr )
     pulRefCount = pAnonList;
 
     pmal    = ( PMMAPANONLIST )( pulRefCount + 1 );
-    pmalEnd = pAnonList + SHARED_NAME_MMAP_ANON_SIZE;
+    pmalEnd = ( PMMAPANONLIST )
+              (( PBYTE )pAnonList + SHARED_NAME_MMAP_ANON_SIZE);
 
     /* find an addr */
     while( pmal + 1 <= pmalEnd && pmal->addr != addr )
@@ -317,7 +319,8 @@ static int mmapGetAnonMem( void )
         pulRefCount = pAnonList;
 
         pmal    = ( PMMAPANONLIST )( pulRefCount + 1 );
-        pmalEnd = pAnonList + SHARED_NAME_MMAP_ANON_SIZE;
+        pmalEnd = ( PMMAPANONLIST )
+                  (( PBYTE )pAnonList + SHARED_NAME_MMAP_ANON_SIZE);
 
         /* find MAP_ANON memory and get access to it */
         for(; pmal + 1 <= pmalEnd; pmal++ )
@@ -584,8 +587,8 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
                         fildes = dup( fildes );
                     }
 
-                    rc = DosAliasMem( shared_base + pagesize + off, len, &ret,
-                                      0 );
+                    rc = DosAliasMem(( char * )shared_base + pagesize + off,
+                                     len, &ret, 0 );
                     if( fildes == -1 || rc )
                     {
                         if( !rc )
@@ -643,7 +646,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         if( flags & MAP_SHARED )
         {
             read_off = 0;
-            read_buf = new_mmap->base + pagesize;
+            read_buf = ( char * )new_mmap->base + pagesize;
             read_len = -1;
         }
         else
@@ -722,7 +725,8 @@ int mprotect( void *addr, size_t len, int prot )
 
     for( mm = m_mmap; mm; mm = mm->prev )
     {
-        if( mm->addr <= addr && addr + len <= mm->addr + mm->len )
+        if( mm->addr <= addr
+            && ( char * )addr + len <= ( char * )mm->addr + mm->len )
             break;
     }
 
@@ -760,7 +764,8 @@ int msync( void *addr, size_t len, int flags )
     /* find addr */
     for( mm = m_mmap; mm; mm = mm->prev )
     {
-        if( mm->addr <= addr && addr + len <= mm->addr + mm->len )
+        if( mm->addr <= addr
+            && ( char * )addr + len <= ( char * )mm->addr + mm->len )
             break;
     }
 
@@ -777,7 +782,8 @@ int msync( void *addr, size_t len, int flags )
     /* write to a file */
     if(( flags & MS_SYNC )
        && ( mm->flags & MAP_SHARED ) && ( mm->prot & PROT_WRITE )
-       && writeToFile( mm->fd, mm->off + addr - mm->addr, addr, len ) == -1 )
+       && writeToFile( mm->fd, mm->off + ( char * )addr - ( char * )mm->addr,
+                       addr, len ) == -1 )
         return -1;
 
     /* read from a file */
