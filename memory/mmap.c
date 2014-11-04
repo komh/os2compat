@@ -11,6 +11,7 @@
  */
 
 #define INCL_DOS
+#define INCL_DOSERRORS
 #include <os2.h>
 
 #include <stdio.h>
@@ -48,7 +49,7 @@ static os2_mmap *m_mmap = NULL;
  * @param[in]  fd  file descriptor
  * @param[in]  off offset of a file
  * @param[out] buf a memory to be transferred from a file
- * @param[in]  len length to read in bytes
+ * @param[in]  len length to read in bytes. -1 for a file length
  * @return 0 on success, or -1 on error
  */
 static int readFromFile( int fd, off_t off, void *buf, size_t len )
@@ -61,6 +62,9 @@ static int readFromFile( int fd, off_t off, void *buf, size_t len )
     /* Seek to offset off */
     if( lseek( fd, off, SEEK_SET ) == -1)
         return -1;
+
+    if( len == -1 )
+        len = filelength( fd );
 
     /* Read in a file */
     if( read( fd, buf, len ) == -1 )
@@ -426,6 +430,37 @@ int fork( void )
 
 #define SHARED_NAME_PREFIX      "\\SHAREMEM\\OS2MMAP\\"
 #define SHARED_NAME_PREFIX_LEN  18
+#define SHARED_NAME_MAX_LEN     ( SHARED_NAME_PREFIX_LEN + CCHMAXPATH )
+
+/**
+ * Get a name for a shared memory from a file descriptor.
+ * @param[in]  fd   file descriptor
+ * @param[out] name the place to store a file name
+ * @param[in]  size maximum size of name
+ * @return 0 on success, or -1 error
+ */
+int mmapGetSharedNameFromFd( int fd, char *name, size_t size )
+{
+    if( size <= SHARED_NAME_PREFIX_LEN )
+        return -1;
+
+    strcpy( name, SHARED_NAME_PREFIX );
+
+    /* get a filename from a file descriptor */
+    if( __libc_Back_ioFHToPath( fd, name + SHARED_NAME_PREFIX_LEN,
+                                size - SHARED_NAME_PREFIX_LEN ))
+        return -1;
+
+    /* replace ':' with '_' */
+    name[ SHARED_NAME_PREFIX_LEN + 1 ] = '_';
+
+    /* convert '/' to '\' */
+    for( name += SHARED_NAME_PREFIX_LEN; *name; name++ )
+        if( *name == '/' || *name == ':')
+            *name = '\\';
+
+    return 0;
+}
 
 /**
  * Map a file to a memory.
@@ -503,26 +538,11 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
             }
             else
             {
-                char *p;
+                shared_name = alloca( SHARED_NAME_MAX_LEN );
 
-                shared_name = alloca( SHARED_NAME_PREFIX_LEN + CCHMAXPATH );
-
-                strcpy( shared_name, SHARED_NAME_PREFIX );
-
-                /* get a filename from a file descriptor */
-                if( __libc_Back_ioFHToPath( fildes,
-                                            &shared_name[
-                                                SHARED_NAME_PREFIX_LEN ],
-                                            CCHMAXPATH ))
+                if( mmapGetSharedNameFromFd( fildes, shared_name,
+                                             SHARED_NAME_MAX_LEN ) == -1 )
                     return MAP_FAILED;
-
-                /* replace ':' with '_' */
-                shared_name[ SHARED_NAME_PREFIX_LEN + 1 ] = '_';
-
-                /* convert '/' to '\' */
-                for( p = shared_name; *p; p++ )
-                    if( *p == '/' || *p == ':')
-                        *p = '\\';
 
                 shared_mem_len = pagesize + filelength( fildes );
             }
@@ -624,7 +644,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         {
             read_off = 0;
             read_buf = new_mmap->base + pagesize;
-            read_len = filelength( fildes );
+            read_len = -1;
         }
         else
         {
@@ -673,7 +693,7 @@ int munmap( void *addr, size_t len )
         if(( mm->flags & ( MAP_ANON | MAP_SHARED )) == MAP_SHARED
            && ( mm->prot & PROT_WRITE ))
         {
-            if( writeToFile( mm->fd, mm->off, mm->addr, mm->len ) == -1 )
+            if( msync( mm->addr, mm->len, MS_SYNC ) == -1 )
                 return -1;
 
             close( mm->fd );
@@ -721,3 +741,65 @@ void *mmap_anon( void *addr, size_t len, int prot, int flags, off_t off )
     return mmap( addr, len, prot, flags | MAP_ANON, -1, off );
 }
 
+/**
+ * Synchronize memory with a file
+ */
+int msync( void *addr, size_t len, int flags )
+{
+    os2_mmap *mm;
+
+    if( !( flags & ( MS_ASYNC | MS_SYNC | MS_INVALIDATE )))
+        return -1;
+
+    if(( flags & MS_ASYNC ) && ( flags & MS_SYNC ))
+        return -1;
+
+    if(( uintptr_t )addr % getpagesize())
+        return -1;
+
+    /* find addr */
+    for( mm = m_mmap; mm; mm = mm->prev )
+    {
+        if( mm->addr <= addr && addr + len <= mm->addr + mm->len )
+            break;
+    }
+
+    /* not found */
+    if( !mm )
+        return -1;
+
+    /* nothing to do for MAP_ANON */
+    if( mm->flags & MAP_ANON )
+        return 0;
+
+    /* nothing to do for MS_ASYNC */
+
+    /* write to a file */
+    if(( flags & MS_SYNC )
+       && ( mm->flags & MAP_SHARED ) && ( mm->prot & PROT_WRITE )
+       && writeToFile( mm->fd, mm->off + addr - mm->addr, addr, len ) == -1 )
+        return -1;
+
+    /* read from a file */
+    if( flags & MS_INVALIDATE )
+    {
+        char   name[ SHARED_NAME_MAX_LEN ];
+        void  *base;
+        int    rc;
+
+        if( mmapGetSharedNameFromFd( mm->fd, name, sizeof( name )) == -1 )
+            return -1;
+
+        rc = DosGetNamedSharedMem( &base, name, PAG_READ );
+        if( rc )    /* ERROR_FILE_NOT_FOUND menas all private mmaped memory */
+            return rc == ERROR_FILE_NOT_FOUND ? 0 : -1;
+
+        rc = readFromFile( mm->fd, 0, base, -1 );
+
+        DosFreeMem( base );
+
+        return rc;
+    }
+
+    return 0;
+}

@@ -41,6 +41,13 @@
 /* Return value of `mmap' in case of an error.  */
 #define MAP_FAILED ((void *)-1)
 
+/*
+ * Synchronization flags
+ */
+#define MS_ASYNC        0x0001  /* Perform asynchronous writes */
+#define MS_SYNC         0x0002  /* Perform synchronous writes */
+#define MS_INVALIDATE   0x0004  /* Invalidate cached data */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -52,6 +59,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 int   munmap( void *addr, size_t len );
 int   mprotect( void *addr, size_t len, int prot );
 void *mmap_anon( void *addr, size_t len, int prot, int flags, off_t off );
+int   msync( void *addr, size_t len, int flags );
 
 #ifdef __cplusplus
 }
