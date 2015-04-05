@@ -27,11 +27,11 @@ call checkCC 'memory/mmap.h', 'memory/mmap.c', ,
              'mprotect( 0, 0, 0);' || g.sNl ||,
              'munmap( 0, 0 );' || g.sNl ||,
              'mmap_anon( 0, 0, 0, 0, 0);';
-call checkCC , 'process/spawnvpe.c', 'spawnvpe( 0, 0, 0, 0 );';
+call checkCC 'process.h', 'process/spawnvpe.c', 'spawnvpe( 0, 0, 0, 0 );';
 call checkCC 'io/non-block-pipe.h', 'io/non-block-pipe.c', ,
              'named_pipe( 0 ); sock_pipe( 0 );';
-call checkCC , 'io/freopen.c', 'freopen( 0, 0, 0 );';
-call checkCC , 'io/setmode.c', 'setmode( 0, 0 );';
+call checkCC 'stdio.h', 'io/freopen.c', 'freopen( 0, 0, 0 );';
+call checkCC 'io.h fcntl.h', 'io/setmode.c', 'setmode( 0, 0 );';
 
 say 'Check completed';
 
