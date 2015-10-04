@@ -27,17 +27,21 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include <sys/socket.h>
+
 #include "poll.h"
 
 int poll( struct pollfd *fds, unsigned nfds, int timeout )
 {
     fd_set rdset, wrset, exset;
 
+    int non_sockets = 0;
+
     struct timeval tv = { 0, 0 };
 
-    unsigned i;
-
     int val = -1;
+
+    unsigned i;
 
     FD_ZERO( &rdset );
     FD_ZERO( &wrset );
@@ -45,6 +49,21 @@ int poll( struct pollfd *fds, unsigned nfds, int timeout )
     for( i = 0; i < nfds; i++ )
     {
         int fd = fds[ i ].fd;
+
+        fds[ i ].revents = 0;
+        if( getsockopt( fd, SOL_SOCKET, SO_TYPE,
+                        &( int ){ 0 }, &( int ){ sizeof( int )}) == -1 &&
+            ( errno == ENOTSOCK || errno == EBADF ))
+        {
+            if (fd >= 0)
+            {
+                fds[ i ].revents = POLLNVAL;
+                non_sockets++;
+            }
+
+            continue;
+        }
+
         if( val < fd )
             val = fd;
 
@@ -62,24 +81,64 @@ int poll( struct pollfd *fds, unsigned nfds, int timeout )
             FD_SET( fd, &exset );
     }
 
-    if( timeout >= 0 )
+    /* Sockets included ? */
+    if( val != -1 )
     {
-        div_t d    = div( timeout, 1000 );
-        tv.tv_sec  = d.quot;
-        tv.tv_usec = d.rem * 1000;
+        fd_set saved_rdset = rdset;
+        fd_set saved_wrset = wrset;
+        fd_set saved_exset = exset;
+
+        /* Check pending sockets */
+        switch( select( val + 1, &rdset, &wrset, &exset, &tv ))
+        {
+            case -1 :   /* Error */
+                return -1;
+
+            case 0 :    /* Timeout */
+                /* Socket only ? */
+                if( non_sockets == 0 )
+                {
+                    struct timeval *ptv = NULL;
+
+                    if( timeout >= 0 )
+                    {
+                        div_t d    = div( timeout, 1000 );
+                        tv.tv_sec  = d.quot;
+                        tv.tv_usec = d.rem * 1000;
+
+                        ptv = &tv;
+                    }
+
+                    rdset = saved_rdset;
+                    wrset = saved_wrset;
+                    exset = saved_exset;
+
+                    if( select( val + 1, &rdset, &wrset, &exset, ptv )
+                            == -1 )
+                        return -1;
+                }
+                break;
+
+            default:    /* Ready */
+                break;
+        }
     }
 
-    val = select( val + 1, &rdset, &wrset, &exset,
-                      ( timeout >= 0 ) ? &tv : NULL );
-    if( val == -1 )
-        return -1;
-
+    val = 0;
     for( i = 0; i < nfds; i++ )
     {
         int fd = fds[ i ].fd;
-        fds[ i ].revents = ( FD_ISSET( fd, &rdset ) ? POLLIN  : 0 )
-                         | ( FD_ISSET( fd, &wrset ) ? POLLOUT : 0 )
-                         | ( FD_ISSET( fd, &exset ) ? POLLPRI : 0 );
+
+        if( fd >= 0 && fds[ i ].revents == 0)
+        {
+            int fd = fds[ i ].fd;
+            fds[ i ].revents = ( FD_ISSET( fd, &rdset ) ? POLLIN  : 0 )
+                             | ( FD_ISSET( fd, &wrset ) ? POLLOUT : 0 )
+                             | ( FD_ISSET( fd, &exset ) ? POLLPRI : 0 );
+        }
+
+        if( fds[ i ].revents != 0 )
+            val++;
     }
 
     return val;

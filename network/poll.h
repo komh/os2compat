@@ -33,7 +33,7 @@ extern "C" {
 #define POLLHUP     0x0010  /* not supported */
 #endif
 #ifndef POLLNVAL
-#define POLLNVAL    0x0020  /* not supported */
+#define POLLNVAL    0x0020
 #endif
 
 struct pollfd
