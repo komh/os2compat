@@ -28,6 +28,7 @@
 #include <errno.h>
 
 #include <sys/socket.h>
+#include <sys/stat.h>
 
 #include "poll.h"
 
@@ -49,15 +50,21 @@ int poll( struct pollfd *fds, unsigned nfds, int timeout )
     for( i = 0; i < nfds; i++ )
     {
         int fd = fds[ i ].fd;
+        struct stat stbuf;
 
         fds[ i ].revents = 0;
-        if( getsockopt( fd, SOL_SOCKET, SO_TYPE,
-                        &( int ){ 0 }, &( int ){ sizeof( int )}) == -1 &&
-            ( errno == ENOTSOCK || errno == EBADF ))
+
+        if( fstat( fd, &stbuf ) == -1 ||
+            (errno = 0, !S_ISSOCK( stbuf.st_mode )))
         {
-            if (fd >= 0)
+            if( fd >= 0 )
             {
-                fds[ i ].revents = POLLNVAL;
+                /* If regular files, assume they are ready for all modes */
+                fds[ i ].revents = ( !errno && S_ISREG( stbuf.st_mode ))
+                                   ? ( fds[ i ].events &
+                                       ( POLLIN | POLLOUT | POLLPRI ))
+                                   : POLLNVAL;
+
                 non_sockets++;
             }
 
@@ -82,7 +89,7 @@ int poll( struct pollfd *fds, unsigned nfds, int timeout )
     }
 
     /* Sockets included ? */
-    if( val != -1 )
+    if( val != -1)
     {
         fd_set saved_rdset = rdset;
         fd_set saved_wrset = wrset;

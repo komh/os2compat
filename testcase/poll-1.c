@@ -11,21 +11,31 @@
  */
 
 #include <stdio.h>
-#include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 
 #include "poll.h"
 
 void poll_test( const char *msg, struct pollfd *fds, int n, int timeout )
 {
+    struct timeval tv1;
+    struct timeval tv2;
     int i;
     int rc;
 
     printf("%s\n", msg );
 
+    gettimeofday( &tv1, NULL );
+
     rc = poll( fds, n, timeout );
 
-    printf("rc = %d\n", rc );
+    gettimeofday( &tv2, NULL );
+
+    printf("rc = %d, duration = %ld (ms)\n",
+           rc, ( tv2.tv_sec * 1000 + tv2.tv_usec / 1000 ) -
+               ( tv1.tv_sec * 1000 + tv1.tv_usec / 1000 ));
 
     for( i = 0; i < n; i++ )
     {
@@ -41,102 +51,37 @@ void poll_test( const char *msg, struct pollfd *fds, int n, int timeout )
 
 int main( void )
 {
-    struct pollfd fds[ 2 ];
+    struct pollfd fds[ 3 ];
     int sv[ 2 ];
 
     fds[ 0 ].fd     = INVALID_HANDLE;
     fds[ 0 ].events = POLLIN;
 
-    socketpair( AF_LOCAL, SOCK_STREAM, 0, sv );
-
-    fds[ 1 ].fd     = sv[ 0 ];
+    fds[ 1 ].fd     = NEGATIVE_HANDLE;
     fds[ 1 ].events = POLLIN;
 
-    poll_test("An invalid handle only, 0 timeout.",
-              fds, 1, 0 );
+    fds[ 2 ].fd     = open("poll-1.c", O_RDONLY);
+    fds[ 2 ].events = POLLIN;
 
-    poll_test("An invalid handle only, 1000 timeout.",
-              fds, 1, 1000 );
+    socketpair( AF_LOCAL, SOCK_STREAM, 0, sv );
 
-    poll_test("An invalid handle only, -1 timeout.",
-              fds, 1, -1 );
+    fds[ 3 ].fd     = sv[ 0 ];
+    fds[ 3 ].events = POLLIN;
 
-    poll_test("A not-read-ready-socket only, 0 timeout.",
-              fds + 1, 1, 0 );
 
-    poll_test("A not-read-ready-socket only, 1000 timeout.",
-              fds + 1, 1, 1000 );
+    poll_test("Invalid, negative, regular, not-read-ready-socket, 1000 timeout.\n",
+              fds, 4, 1000);
 
-#if 0
-    poll_test("A not-read-ready-socket only, -1 timeout.",
-              fds + 1, 1, -1 );
-#endif
-
-    poll_test("An invalid handle and a not-read-ready-socket, 0 timeout.",
-              fds, 2, 0 );
-
-    poll_test("An invalid handle and a not-read-ready-socket, 1000 timeout.",
-              fds, 2, 1000 );
-
-    poll_test("An invalid handle and a not-read-ready-socket, -1 timeout.",
-              fds, 2, -1 );
-
-    fds[ 0 ].fd = NEGATIVE_HANDLE;
-
-    poll_test("A negative handle only, 0 timeout.",
-              fds, 1, 0 );
-
-    poll_test("A negative only, 1000 timeout.",
-              fds, 1, 1000 );
-
-#if 0
-    poll_test("A negative handle only, -1 timeout.",
-              fds, 1, -1 );
-#endif
-
-    poll_test("A negative handle and a not-read-ready-socket, 0 timeout.",
-              fds, 2, 0 );
-
-    poll_test("A negative handle and a not-read-ready-socket, 1000 timeout.",
-              fds, 2, 1000 );
-
-#if 0
-    poll_test("A negative handle and a not-read-ready-socket, -1 timeout.",
-              fds, 2, -1 );
-#endif
+    poll_test("Not-read-ready-socket only, 1000 timeout.\n",
+              fds + 3, 1, 1000 );
 
     write( sv[ 1 ], "\0", 1 );
 
-    poll_test("A read-ready-socket only, 0 timeout.",
-              fds + 1, 1, 0 );
+    poll_test("Invalid, negative, regular, read-ready-socket, 1000 timeout.\n",
+              fds, 4, 1000);
 
-    poll_test("A read-ready-socket only, 1000 timeout.",
-              fds + 1, 1, 1000 );
-
-    poll_test("A read-ready-socket only, -1 timeout.",
-              fds + 1, 1, -1 );
-
-    fds[ 0 ].fd = INVALID_HANDLE;
-
-    poll_test("An invalid handle and a read-ready-socket, 0 timeout.",
-              fds, 2, 0 );
-
-    poll_test("An invalid handle and a read-ready-socket, 1000 timeout.",
-              fds, 2, 1000 );
-
-    poll_test("An invalid handle and a read-ready-socket, -1 timeout.",
-              fds, 2, -1 );
-
-    fds[ 0 ].fd = NEGATIVE_HANDLE;
-
-    poll_test("A negative handle and a read-ready-socket, 0 timeout.",
-              fds, 2, 0 );
-
-    poll_test("A negative handle and a read-ready-socket, 1000 timeout.",
-              fds, 2, 1000 );
-
-    poll_test("A negative handle and a read-ready-socket, -1 timeout.",
-              fds, 2, -1 );
+    poll_test("Read-ready-socket only, 1000 timeout.\n",
+              fds + 3, 1, 1000 );
 
     close( sv[ 0 ]);
     close( sv[ 1 ]);
