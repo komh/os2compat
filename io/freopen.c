@@ -17,7 +17,11 @@ FILE *_std_freopen( const char *fname, const char *mode, FILE *stream );
 
 FILE *freopen( const char *fname, const char *mode, FILE *stream )
 {
-    FILE *result = _std_freopen( fname, mode, stream );
+    FILE *result;
+
+    errno = 0;
+
+    result = _std_freopen( fname, mode, stream );
 
     if( !result && !errno )
         result = stream;
