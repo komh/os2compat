@@ -13,8 +13,10 @@
 #include <stdio.h>
 #include <errno.h>
 
+/* alias */
 FILE *_std_freopen( const char *fname, const char *mode, FILE *stream );
 
+/* freopen() fails when fname is NULL even if it succeeds */
 FILE *freopen( const char *fname, const char *mode, FILE *stream )
 {
     FILE *result;
@@ -23,7 +25,7 @@ FILE *freopen( const char *fname, const char *mode, FILE *stream )
 
     result = _std_freopen( fname, mode, stream );
 
-    if( !result && !errno )
+    if( !fname && !result && !errno )
         result = stream;
 
     return result;
