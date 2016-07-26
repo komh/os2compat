@@ -32,6 +32,12 @@ call checkCC 'io/non-block-pipe.h', 'io/non-block-pipe.c', ,
              'named_pipe( 0 ); sock_pipe( 0 );';
 call checkCC 'stdio.h', 'io/freopen.c', 'freopen( 0, 0, 0 );';
 call checkCC 'io.h fcntl.h', 'io/setmode.c', 'setmode( 0, 0 );';
+call checkCC 'thread/semaphore.h', 'thread/semaphore.c', ,
+             'sem_init( 0, 0, 0 );' || g.sNl ||,
+             'sem_destroy( 0 );' || g.sNl ||,
+             'sem_post( 0 );' || g.sNl ||,
+             'sem_wait( 0 );' || g.sNl ||,
+             'sem_trywait( 0 );';
 
 say 'Check completed';
 

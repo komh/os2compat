@@ -81,7 +81,8 @@ BIN_PROGRAMS := mmap-1 \
                 non-block-pipe-2 \
                 freopen-1 \
                 setmode-1 \
-                poll-1
+                poll-1 \
+                semaphore-1
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -113,6 +114,9 @@ setmode-1_SRCS := setmode-1.c ../io/setmode.c
 
 poll-1_SRCS := poll-1.c ../network/poll.c
 poll-1_CFLAGS := -I../network
+
+semaphore-1_SRCS := semaphore-1.c ../thread/semaphore.c
+semaphore-1_CFLAGS := -I../thread
 
 # 1. specify a list of libraries without an extension with
 #
