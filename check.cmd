@@ -39,6 +39,7 @@ call checkCC 'thread/semaphore.h', 'thread/semaphore.c', ,
              'sem_wait( 0 );' || g.sNl ||,
              'sem_trywait( 0 );';
 call checkCC 'io/scandir.h', 'io/scandir.c', 'scandir( 0, 0, 0, alphasort );';
+call checkCC 'network/cmsg.h',, 'return CMSG_LEN( 0 ) + CMSG_SPACE( 0 );';
 
 say 'Check completed';
 
