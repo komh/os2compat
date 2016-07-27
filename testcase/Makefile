@@ -82,7 +82,8 @@ BIN_PROGRAMS := mmap-1 \
                 freopen-1 \
                 setmode-1 \
                 poll-1 \
-                semaphore-1
+                semaphore-1 \
+                scandir-1
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -117,6 +118,9 @@ poll-1_CFLAGS := -I../network
 
 semaphore-1_SRCS := semaphore-1.c ../thread/semaphore.c
 semaphore-1_CFLAGS := -I../thread
+
+scandir-1_SRCS := scandir-1.c ../io/scandir.c
+scandir-1_CFLAGS := -I../io
 
 # 1. specify a list of libraries without an extension with
 #

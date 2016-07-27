@@ -38,6 +38,7 @@ call checkCC 'thread/semaphore.h', 'thread/semaphore.c', ,
              'sem_post( 0 );' || g.sNl ||,
              'sem_wait( 0 );' || g.sNl ||,
              'sem_trywait( 0 );';
+call checkCC 'io/scandir.h', 'io/scandir.c', 'scandir( 0, 0, 0, alphasort );';
 
 say 'Check completed';
 
