@@ -199,7 +199,7 @@ typedef struct MMAPANONLIST
     PVOID addr;     /**< address of MAP_ANON memory */
     ULONG len;      /**< length of MAP_ANON memory */
     ULONG prot;     /**< protection flags of MAP_ANON memory */
-    ULONG refCount; /**< reference count of mAP_ANON memory */
+    ULONG refCount; /**< reference count of MAP_ANON memory */
 } MMAPANONLIST, *PMMAPANONLIST;
 
 /**
