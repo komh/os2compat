@@ -54,7 +54,7 @@ int main( void )
         EXIT( 1 );
     }
 
-    printf("Spwaning a child...\n");
+    printf("Spawning a child...\n");
     if( spawnlp( P_WAIT, child, child, NULL ) != 0 )
     {
         fprintf( stderr, "spawnlp() failed\n");
