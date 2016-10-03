@@ -530,6 +530,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
         if( flags & MAP_SHARED )
         {
+            char shared_name_buf[ SHARED_NAME_MAX_LEN ];
             char *shared_name;
             off_t shared_mem_len;
 
@@ -541,12 +542,11 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
             }
             else
             {
-                shared_name = alloca( SHARED_NAME_MAX_LEN );
-
-                if( mmapGetSharedNameFromFd( fildes, shared_name,
-                                             SHARED_NAME_MAX_LEN ) == -1 )
+                if( mmapGetSharedNameFromFd( fildes, shared_name_buf,
+                                             sizeof( shared_name_buf )) == -1 )
                     return MAP_FAILED;
 
+                shared_name = shared_name_buf;
                 shared_mem_len = pagesize + filelength( fildes );
             }
 
