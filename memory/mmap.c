@@ -459,7 +459,7 @@ int mmapGetSharedNameFromFd( int fd, char *name, size_t size )
 
     /* convert '/' to '\' */
     for( name += SHARED_NAME_PREFIX_LEN; *name; name++ )
-        if( *name == '/' || *name == ':')
+        if( *name == '/')
             *name = '\\';
 
     return 0;
