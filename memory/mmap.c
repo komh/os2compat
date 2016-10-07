@@ -515,7 +515,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
         cb = len;
         rc = DosQueryMem( addr, &cb, &fl );
-        if( rc || ( cb < len ))
+        if( rc || !( fl & PAG_COMMIT ))
             return MAP_FAILED;
 
         rc = DosSetMem( addr, len, fPERM );
