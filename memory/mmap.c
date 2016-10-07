@@ -12,6 +12,7 @@
 
 #define INCL_DOS
 #define INCL_DOSERRORS
+#define INCL_EXAPIS
 #include <os2.h>
 
 #include <stdio.h>
@@ -25,6 +26,8 @@
 #include <InnoTekLIBC/backend.h>
 
 #include "mmap.h"
+
+#define MAP_ALLOCATED   0x0020  /* memory allocated for MAP_FIXED */
 
 typedef struct os2_mmap_s
 {
@@ -157,6 +160,8 @@ static void mmapFreeMem( void *addr, void *base, int flags )
             }
         }
     }
+    else if( flags & MAP_ALLOCATED )
+        DosFreeMemEx( addr );
 }
 
 /**
@@ -467,8 +472,7 @@ int mmapGetSharedNameFromFd( int fd, char *name, size_t size )
 
 /**
  * Map a file to a memory.
- * @remark MAP_FIXED will succeed only if [addr, addr + len) is already
- * allocated and MAP_PRIVATE is specified as well.
+ * @remark MAP_FIXED works only with MAP_PRIVATE.
  * @warning If a translation mode of fildes is a text mode, len and a real
  * length read may be different.
  * @todo demand paging.
@@ -515,10 +519,22 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
         cb = len;
         rc = DosQueryMem( addr, &cb, &fl );
-        if( rc || !( fl & PAG_COMMIT ))
-            return MAP_FAILED;
+        if( rc || ( fl & PAG_FREE ))
+        {
+            ULONG ulFlag = fPERM | PAG_COMMIT | OBJ_LOCATION;
 
-        rc = DosSetMem( addr, len, fPERM );
+            rc = DosAllocMemEx( &addr, len, ulFlag | OBJ_ANY );
+            if( rc )
+                rc = DosAllocMemEx( &addr, len, ulFlag );
+
+            if( !rc )
+                flags |= MAP_ALLOCATED;
+        }
+        else if ( fl & PAG_COMMIT )
+            rc = DosSetMem( addr, len, fPERM );
+        else /* Reserved pages ? */
+            rc = ERROR_INVALID_ADDRESS;
+
         if( rc )
             return MAP_FAILED;
 
