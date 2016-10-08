@@ -517,7 +517,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         ULONG cb;
         ULONG fl;
 
-        cb = len;
+        cb = 1;
         rc = DosQueryMem( addr, &cb, &fl );
         if( rc || ( fl & PAG_FREE ))
         {
