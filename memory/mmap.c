@@ -527,10 +527,9 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
             if( !rc )
                 flags |= MAP_ALLOCATED;
         }
-        else if ( fl & PAG_COMMIT )
-            rc = DosSetMem( addr, len, fPERM );
-        else /* Reserved pages ? */
-            rc = ERROR_INVALID_ADDRESS;
+        else /* Committed or reserved pages */
+            rc = DosSetMem( addr, len,
+                            fPERM | (( fl & PAG_COMMIT ) ^ PAG_COMMIT ));
 
         if( rc )
             return MAP_FAILED;
