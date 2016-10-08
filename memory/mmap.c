@@ -523,10 +523,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         {
             ULONG ulFlag = fPERM | PAG_COMMIT | OBJ_LOCATION;
 
-            rc = DosAllocMemEx( &addr, len, ulFlag | OBJ_ANY );
-            if( rc )
-                rc = DosAllocMemEx( &addr, len, ulFlag );
-
+            rc = DosAllocMemEx( &addr, len, ulFlag );
             if( !rc )
                 flags |= MAP_ALLOCATED;
         }
