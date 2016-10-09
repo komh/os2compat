@@ -145,5 +145,7 @@ main ()
     if (*(data + i) != *(data3 + i))
       RETURN (14);
   close (fd);
+  remove ("conftest.mmap");
+  remove ("conftest.txt");
   RETURN (0);
 }
