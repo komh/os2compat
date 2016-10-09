@@ -29,6 +29,10 @@
 
 #define MAP_ALLOCATED   0x0020  /* memory allocated for MAP_FIXED */
 
+#define SHARED_NAME_PREFIX      "\\SHAREMEM\\OS2MMAP\\"
+#define SHARED_NAME_PREFIX_LEN  18
+#define SHARED_NAME_MAX_LEN     ( SHARED_NAME_PREFIX_LEN + CCHMAXPATH )
+
 typedef struct os2_mmap_s
 {
     void    *addr;              /**< address of mapped memory */
@@ -41,6 +45,8 @@ typedef struct os2_mmap_s
     off_t   off;            /**< offset of a mapped file */
     void    *base;          /**< base address of a shared mapped memory */
     int     prot;           /**< protection flags of a shared mapped memory */
+    char    shared_name[ SHARED_NAME_MAX_LEN ];
+                            /**< name of a named shared memory */
 
     struct os2_mmap_s *prev;    /**< previous list of os2_mmap */
     struct os2_mmap_s *next;    /**< next list of os2_mmap */
@@ -397,9 +403,139 @@ static int mmapGetAnonMem( void )
 #endif
 
 /**
+ * Alias memory at a given address.
+ *
+ * @remark  This algorithm is an improoved version of the one Odin uses in
+ *          it's Ring-3 PeLdr.
+ */
+static int aliasAtAddress( void *pMem, ULONG cbReq, void *pvReq, ULONG fReq )
+{
+    PVOID   apvTmps[ 512 ]; /* 512MB */
+    ULONG   cbTmp;
+    ULONG   fTmp;
+    int     iTmp;
+    int     rcRet = ERROR_NOT_ENOUGH_MEMORY;
+
+    /*
+     * Adjust flag and size.
+     */
+    fReq &= ~OBJ_LOCATION;
+    cbReq = ( cbReq + 0xfff ) & ~0xfff;
+
+    /*
+     * Allocation loop.
+     * This algorithm is not optimal!
+     */
+    fTmp  = fPERM;
+    cbTmp = 1 * 1024 * 1024; /* 1MB */
+    for( iTmp = 0; iTmp < sizeof( apvTmps ) / sizeof( apvTmps[ 0 ]); iTmp++ )
+    {
+        PVOID   pvNew = NULL;
+        int     rc;
+
+        /* Allocate chunk. */
+        rc = DosAllocMem( &pvNew, cbTmp, fTmp );
+        apvTmps[ iTmp ] = pvNew;
+        if( rc )
+            break;
+
+        /*
+         * Passed it?
+         * Then retry with the requested size.
+         */
+        if( pvNew > pvReq )
+        {
+            if( cbTmp <= cbReq )
+                break;
+            DosFreeMem( pvNew );
+            cbTmp = cbReq;
+            iTmp--;
+            continue;
+        }
+
+        /*
+         * Does the allocated object touch into the requested one?
+         */
+        if(( char * )pvNew + cbTmp > ( char * )pvReq )
+        {
+            /*
+             * Yes, we've found the requested address!
+             */
+            apvTmps[ iTmp ] = NULL;
+            DosFreeMem( pvNew );
+
+            /*
+             * Adjust the allocation size to fill the gap between the
+             * one we just got and the requested one.
+             * If no gap we'll attempt the real allocation.
+             */
+            cbTmp = ( uintptr_t )pvReq - ( uintptr_t )pvNew;
+            if( cbTmp )
+            {
+                iTmp--;
+                continue;
+            }
+
+            rc = DosAliasMem( pMem, cbReq, &pvNew, fReq );
+            if( rc || ( char * )pvNew > ( char * )pvReq )
+                break; /* we failed! */
+            if( pvNew == pvReq )
+            {
+                rcRet = 0;
+                break;
+            }
+
+            /*
+             * We've got an object which start is below the one we
+             * requested. This is probably caused by the requested object
+             * fitting in somewhere our tmp objects didn't.
+             * So, we'll have loop and retry till all such holes are filled.
+             */
+            apvTmps[ iTmp ] = pvNew;
+        }
+    }
+
+    /*
+     * Cleanup reserved memory and return.
+     */
+    while( iTmp-- > 0 )
+        if( apvTmps[ iTmp ])
+            DosFreeMem( apvTmps[ iTmp ]);
+
+    return rcRet;
+}
+
+static int mmapGetSharedMem( void )
+{
+    os2_mmap *mm;
+    void *shared_mem;
+    int pagesize = getpagesize();
+
+    for( mm = m_mmap; mm; mm = mm->prev )
+    {
+        if(( mm->flags & ( MAP_ANON | MAP_SHARED )) == MAP_SHARED )
+        {
+            if( DosGetNamedSharedMem( &shared_mem, mm->shared_name, fPERM ))
+                return -1;
+
+            /* Right ? However, fails without this */
+            DosFreeMem( mm->addr );
+
+            if( aliasAtAddress((char * )mm->base + pagesize + mm->off,
+                               mm->len, mm->addr, OBJ_LOCATION )
+                || mmapSetMem( mm->addr, mm->len, mm->prot ) == -1 )
+                return -1;
+
+            ( *( PULONG )mm->base )++;
+        }
+    }
+
+    return 0;
+}
+
+/**
  * Inherit all the shared memories created with MAP_SHARED.
  * @return 0 on success, or -1 on error
- * @todo support shared memories without MAP_ANON
  */
 static int mmapInherit( void )
 {
@@ -407,12 +543,12 @@ static int mmapInherit( void )
 
     for( mm = m_mmap; mm; mm = mm->prev )
     {
-        /* remove entries not having both MAP_ANON and MAP_SHARED */
-        if( !( mm->flags & MAP_ANON ) || !( mm->flags & MAP_SHARED ))
+        /* remove entries without MAP_SHARED */
+        if( !( mm->flags & MAP_SHARED ))
             mmapRemoveMmap( mm );
     }
 
-    return mmapGetAnonMem();
+    return ( mmapGetAnonMem() ||  mmapGetSharedMem()) ? -1 : 0;
 }
 
 int _std_fork( void );
@@ -435,10 +571,6 @@ int fork( void )
 
     return 0;
 }
-
-#define SHARED_NAME_PREFIX      "\\SHAREMEM\\OS2MMAP\\"
-#define SHARED_NAME_PREFIX_LEN  18
-#define SHARED_NAME_MAX_LEN     ( SHARED_NAME_PREFIX_LEN + CCHMAXPATH )
 
 /**
  * Get a name for a shared memory from a file descriptor.
@@ -486,6 +618,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
     void  *ret;
     void  *shared_base = NULL;
+    char   shared_name_buf[ SHARED_NAME_MAX_LEN ] = "";
     int    read_file = !( flags & MAP_ANON );
 
     pagesize = getpagesize();
@@ -542,7 +675,6 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
         if( flags & MAP_SHARED )
         {
-            char shared_name_buf[ SHARED_NAME_MAX_LEN ];
             char *shared_name;
             off_t shared_mem_len;
 
@@ -642,6 +774,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
     new_mmap->off   = off;
     new_mmap->base  = shared_base;
     new_mmap->prot  = prot;
+    strcpy( new_mmap->shared_name, shared_name_buf );
     new_mmap->prev  = m_mmap;
     new_mmap->next  = NULL;
 

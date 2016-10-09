@@ -77,6 +77,7 @@ BIN_PROGRAMS := mmap-1 \
                 mmap-3 \
                 mmap-4 \
                 mmap-5 \
+                mmap-6 \
                 spawnvpe-1 \
                 spawnvpe-1-child \
                 non-block-pipe-1 \
@@ -105,6 +106,9 @@ mmap-4_CFLAGS := -I../memory
 mmap-5_SRCS   := mmap-5.c ../memory/mmap.c
 mmap-5_CFLAGS := -I../memory
 mmap-5_LDFLAGS := -Zbin-files
+
+mmap-6_SRCS   := mmap-6.c ../memory/mmap.c
+mmap-6_CFLAGS := -I../memory
 
 spawnvpe-1_SRCS   := spawnvpe-1.c ../process/spawnvpe.c
 spawnvpe-1_CFLAGS := -I../process
