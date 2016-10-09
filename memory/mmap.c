@@ -719,12 +719,6 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
                 }
                 else
                 {
-                    PULONG pulRefCount = shared_base;
-                    if( read_file )
-                        *pulRefCount = 1;
-                    else
-                        ( *pulRefCount )++;
-
                     if( prot & PROT_WRITE )
                     {
                         /* duplicate fildes to use later */
@@ -743,6 +737,15 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
                         }
 
                         DosFreeMem( shared_base );
+                    }
+                    else
+                    {
+                        PULONG pulRefCount = shared_base;
+
+                        if( read_file )
+                            *pulRefCount = 1;
+                        else
+                            ( *pulRefCount )++;
                     }
                 }
             }
