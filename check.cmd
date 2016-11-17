@@ -40,6 +40,12 @@ call checkCC 'thread/semaphore.h', 'thread/semaphore.c', ,
              'sem_trywait( 0 );';
 call checkCC 'io/scandir.h', 'io/scandir.c', 'scandir( 0, 0, 0, alphasort );';
 call checkCC 'network/cmsg.h',, 'return CMSG_LEN( 0 ) + CMSG_SPACE( 0 );';
+call checkCC 'network/if_nameindex.h', 'network/if_nameindex.c', ,
+             'struct if_nameindex *nis; (void)nis;' || g.sNL ||,
+             'if_nameindex();' || g.sNL ||,
+             'if_freenameindex( 0 );' || g.sNL ||,
+             'if_indextoname( 0, 0 );' || g.sNL ||,
+             'if_nametoindex( 0 );';
 
 say 'Check completed';
 
