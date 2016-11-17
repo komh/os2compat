@@ -14,7 +14,7 @@
 G.sNl = x2c('0d') || x2c('0a');
 G.sTmpDir = value('TMPDIR',, 'OS2ENVIRONMENT');
 
-call checkCC 'network/socklen_t.h',, 'socklen_t socklen;';
+call checkCC 'network/socklen_t.h',, 'socklen_t socklen; (void)socklen;';
 call checkCC 'network/shutdown.h'
 call checkCC 'network/poll.h', 'network/poll.c', 'poll( 0, 0, 0 );';
 call checkCC 'network/getaddrinfo.h', 'network/getaddrinfo.c', ,
