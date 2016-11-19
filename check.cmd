@@ -46,6 +46,7 @@ call checkCC 'network/if_nameindex.h', 'network/if_nameindex.c', ,
              'if_freenameindex( 0 );' || g.sNL ||,
              'if_indextoname( 0, 0 );' || g.sNL ||,
              'if_nametoindex( 0 );';
+call checkCC 'stdlib.h', 'process/_response.c', '_response( 0, 0 );';
 
 say 'Check completed';
 
