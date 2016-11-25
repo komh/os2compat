@@ -31,38 +31,40 @@
 
 static int rc2errno( ULONG rc )
 {
+    int err = 0;
+
     switch( rc )
     {
         case ERROR_INVALID_HANDLE :
-            errno = EINVAL;
+            err = EINVAL;
             break;
 
         case ERROR_NOT_ENOUGH_MEMORY :
-            errno = ENOMEM;
+            err = ENOMEM;
             break;
 
         case ERROR_INVALID_PARAMETER :
-            errno = EINVAL;
+            err = EINVAL;
             break;
 
         case ERROR_INTERRUPT :
-            errno = EINTR;
+            err = EINTR;
             break;
 
         case ERROR_TOO_MANY_HANDLES :
-            errno = ENOSPC;
+            err = ENOSPC;
             break;
 
         case ERROR_SEM_BUSY :
-            errno = EBUSY;
+            err = EBUSY;
             break;
 
         case ERROR_TIMEOUT :
-            errno = EAGAIN;
+            err = EAGAIN;
             break;
     }
 
-    return 0;
+    return err;
 }
 
 /**
