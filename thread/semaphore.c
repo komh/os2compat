@@ -127,7 +127,7 @@ int sem_destroy( sem_t *sem )
  */
 int sem_post( sem_t *sem )
 {
-    ULONG rc;
+    ULONG rc = 0;
 
     DosRequestMutexSem( sem->hmtxCount, SEM_INDEFINITE_WAIT );
 
