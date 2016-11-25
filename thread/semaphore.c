@@ -29,6 +29,13 @@
     } while( 0 );                   \
     return 0
 
+/**
+ * Return errno value corresponding to OS/2 error code
+ *
+ * @param[in] rc OS/2 error code.
+ * @return 0 if @a rc is treated as no error, otherwise errno value
+ *         corresponding to OS/2 error code.
+ */
 static int rc2errno( ULONG rc )
 {
     int err = 0;
