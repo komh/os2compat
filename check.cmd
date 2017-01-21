@@ -88,7 +88,8 @@ checkCC: procedure expose G.
 
     call lineout sTestFile;
 
-    sCmd = 'gcc -Wall -o' sTestFileExe sTestFile sSources;
+    sCmd = 'gcc -Wall -DOS2EMX_PLAIN_CHAR -funsigned-char -o' sTestFileExe,
+           sTestFile sSources;
 
     address cmd sCmd;
 

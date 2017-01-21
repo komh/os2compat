@@ -17,10 +17,10 @@
 SUBDIRS :=
 
 # specify gcc compiler flags for all the programs
-CFLAGS := -Wall
+CFLAGS := -Wall -DOS2EMX_PLAIN_CHAR -funsigned-char
 
 # specify g++ compiler flags for all the programs
-CXXFLAGS := -Wall
+CXXFLAGS := -Wall -DOS2EMX_PLAIN_CHAR -funsigned-char
 
 # specify linker flags such as -L option for all the programs
 LDFLAGS :=
