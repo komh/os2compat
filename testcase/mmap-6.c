@@ -40,6 +40,8 @@ int main( void )
     int  len2 = sizeof( *p2 );
     int  pagesize = getpagesize();
     int  pid;
+    const char *parent = "PARENT";
+    const char *child = "CHILD";
     const char *me;
 
     int i;
@@ -109,7 +111,7 @@ int main( void )
             break;
 
         case 0 :
-            me = "CHILD";
+            me = child;
             printf("%s: %s: *p2 = %d(%d)\n",
                    me, *p2 == KEY_PARENT ? "PASSED" : "FAILED",
                    *p2, KEY_PARENT );
@@ -119,7 +121,7 @@ int main( void )
             break;
 
         default :
-            me = "PARENT";
+            me = parent;
             printf("%s: %s: *p1 = %d(%d)\n",
                    me, *p1 == KEY_CHILD ? "PASSED" : "FAILED",
                    *p1, KEY_CHILD );
@@ -144,7 +146,7 @@ exit_cleanup:
         rc = 1;
     }
 
-    if( me == "PARENT" )
+    if( me == parent )
     {
         int i1 = -1;
         int i2 = -1;
@@ -180,7 +182,7 @@ exit_cleanup:
         rc = 1;
     }
 
-    if( me == "PARENT" )
+    if( me == parent )
     {
         remove( TESTFILE1 );
         remove( TESTFILE2 );
