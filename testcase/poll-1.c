@@ -51,7 +51,7 @@ void poll_test( const char *msg, struct pollfd *fds, int n, int timeout )
 
 int main( void )
 {
-    struct pollfd fds[ 3 ];
+    struct pollfd fds[ 4 ];
     int sv[ 2 ];
 
     fds[ 0 ].fd     = INVALID_HANDLE;
@@ -83,6 +83,7 @@ int main( void )
     poll_test("Read-ready-socket only, 1000 timeout.\n",
               fds + 3, 1, 1000 );
 
+    close( fds[ 2 ].fd );
     close( sv[ 0 ]);
     close( sv[ 1 ]);
 
