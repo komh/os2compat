@@ -24,6 +24,7 @@
 #include <sys/types.h>
 
 #include <InnoTekLIBC/backend.h>
+#include <InnoTekLIBC/fork.h>
 
 #include "mmap.h"
 
@@ -551,26 +552,26 @@ static int mmapInherit( void )
     return ( mmapGetAnonMem() ||  mmapGetSharedMem()) ? -1 : 0;
 }
 
-int _std_fork( void );
-
-/**
- * fork() supporting mmap( MAP_SHARED ).
- * @todo support shared memories without MAP_ANON
- */
-int fork( void )
+static int forkChildCallback( __LIBC_PFORKHANDLE pForkHandle,
+                              __LIBC_FORKOP enumOp )
 {
-    int pid = _std_fork();
+    int rc;
 
-    if( pid != 0 )
-        return pid;
+    switch( enumOp )
+    {
+        case __LIBC_FORK_OP_FORK_CHILD:
+            rc = mmapInherit();
+            break;
 
-    /* child process */
+        default:
+            rc = 0;
+            break;
+    }
 
-    /* @todo error check */
-    mmapInherit();
-
-    return 0;
+    return rc;
 }
+
+_FORK_CHILD1( 0xFFFF00FF, forkChildCallback );
 
 /**
  * Get a name for a shared memory from a file descriptor.
