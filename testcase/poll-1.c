@@ -18,12 +18,14 @@
 
 #include "poll.h"
 
-void poll_test( const char *msg, struct pollfd *fds, int n, int timeout )
+int poll_test( const char *msg, struct pollfd *fds, int n, int timeout,
+               int *res )
 {
     struct timeval tv1;
     struct timeval tv2;
     int i;
     int rc;
+    int passed = 1;
 
     printf("%s\n", msg );
 
@@ -39,11 +41,19 @@ void poll_test( const char *msg, struct pollfd *fds, int n, int timeout )
 
     for( i = 0; i < n; i++ )
     {
-        printf("fd = %d, events = %x, revents = %x\n",
-               fds[ i ].fd, fds[ i ].events, fds[ i ].revents );
+        printf("fd = %d, events = %x, revents = %x(%x)\n",
+               fds[ i ].fd, fds[ i ].events, fds[ i ].revents, res[ i + 1]);
+
+        passed = passed && fds[ i ].revents == res[ i + 1];
     }
 
+    passed = passed && rc == res[ 0 ];
+
+    printf("%s\n", passed ? "PASSED" : "FAILED");
+
     printf("\n");
+
+    return passed;
 }
 
 #define INVALID_HANDLE  100
@@ -52,7 +62,9 @@ void poll_test( const char *msg, struct pollfd *fds, int n, int timeout )
 int main( void )
 {
     struct pollfd fds[ 4 ];
+    int res[ 5 ];
     int sv[ 2 ];
+    int passed = 1;
 
     fds[ 0 ].fd     = INVALID_HANDLE;
     fds[ 0 ].events = POLLIN;
@@ -68,24 +80,43 @@ int main( void )
     fds[ 3 ].fd     = sv[ 0 ];
     fds[ 3 ].events = POLLIN;
 
+    res[ 0 ] = 2;
+    res[ 1 ] = POLLNVAL;
+    res[ 2 ] = 0;
+    res[ 3 ] = POLLIN;
+    res[ 4 ] = 0;
+    passed = passed &&
+             poll_test("Invalid, negative, regular, not-read-ready-socket, "
+                       "1000 timeout.\n", fds, 4, 1000, res);
 
-    poll_test("Invalid, negative, regular, not-read-ready-socket, 1000 timeout.\n",
-              fds, 4, 1000);
-
-    poll_test("Not-read-ready-socket only, 1000 timeout.\n",
-              fds + 3, 1, 1000 );
+    res[ 0 ] = 0;
+    res[ 1 ] = 0;
+    passed = passed &&
+             poll_test("Not-read-ready-socket only, 1000 timeout.\n",
+                       fds + 3, 1, 1000, res );
 
     write( sv[ 1 ], "\0", 1 );
 
-    poll_test("Invalid, negative, regular, read-ready-socket, 1000 timeout.\n",
-              fds, 4, 1000);
+    res[ 0 ] = 3;
+    res[ 1 ] = POLLNVAL;
+    res[ 2 ] = 0;
+    res[ 3 ] = POLLIN;
+    res[ 4 ] = POLLIN;
+    passed = passed &&
+             poll_test("Invalid, negative, regular, read-ready-socket, "
+                       "1000 timeout.\n", fds, 4, 1000, res );
 
-    poll_test("Read-ready-socket only, 1000 timeout.\n",
-              fds + 3, 1, 1000 );
+    res[ 0 ] = 1;
+    res[ 1 ] = POLLIN;
+    passed = passed &&
+             poll_test("Read-ready-socket only, 1000 timeout.\n",
+                       fds + 3, 1, 1000, res );
 
     close( fds[ 2 ].fd );
     close( sv[ 0 ]);
     close( sv[ 1 ]);
+
+    printf("%s\n", passed ? "All test PASSED" : "Some tests FAILED");
 
     return 0;
 }
