@@ -14,6 +14,7 @@
 #include <string.h>
 #include <io.h>
 #include <process.h>
+#include <errno.h>
 
 struct rsp_temp
 {
@@ -74,9 +75,6 @@ static void spawnvpe_cleanup( void )
 int _std_spawnvpe( int mode, const char *name, char * const argv[],
                    char * const envp[]);
 
-/* OS/2 can process a command line up to 32K */
-#define MAX_CMD_LINE_LEN 32768
-
 int spawnvpe( int mode, const char *name, char * const argv[],
               char * const envp[])
 {
@@ -85,9 +83,9 @@ int spawnvpe( int mode, const char *name, char * const argv[],
     char *rsp_argv[ 3 ];
     char  rsp_name_arg[] = "@spawnvpe-rsp-XXXXXX";
     char *rsp_name = &rsp_name_arg[ 1 ];
-    int   arg_len = 0;
     int   i;
     int   rc;
+    int   saved_errno;
 
     /* register cleanup entry */
     if( !registered )
@@ -96,21 +94,21 @@ int spawnvpe( int mode, const char *name, char * const argv[],
         registered = 1;
     }
 
-    for( i = 0; argv[ i ]; i++ )
-        arg_len += strlen( argv[ i ]) + 1;
+    rc = _std_spawnvpe( mode, name, argv, envp );
+    saved_errno = errno;
 
-    /* if a length of command line is longer than MAX_CMD_LINE_LEN, then use
-     * a response file. OS/2 cannot process a command line longer than 32K.
-     * Of course, a response file cannot be recognized by a normal OS/2
-     * program, that is, neither non-EMX or non-kLIBC. But it cannot accept
-     * a command line longer than 32K in itself. So using a response file
-     * in this case, is an acceptable solution */
-    if( arg_len > MAX_CMD_LINE_LEN )
+    /* arguments too long? */
+    if( rc == -1 && errno == EINVAL )
     {
+        /* use a response file */
         int fd;
 
         if(( fd = mkstemp( rsp_name )) == -1 )
+        {
+            errno = saved_errno;
+
             return -1;
+        }
 
         /* write all the arguments except a 0th program name */
         for( i = 1; argv[ i ]; i++ )
@@ -125,14 +123,9 @@ int spawnvpe( int mode, const char *name, char * const argv[],
         rsp_argv[ 1 ] = rsp_name_arg;
         rsp_argv[ 2 ] = NULL;
 
-        argv = rsp_argv;
-    }
+        rc = _std_spawnvpe( mode, name, rsp_argv, envp );
+        saved_errno = errno;
 
-    rc = _std_spawnvpe( mode, name, argv, envp );
-
-    /* a response file was generated ? */
-    if( argv == rsp_argv )
-    {
         /* make a response file list to clean up later if spawned a child
          * successfully except P_WAIT */
         if( rc >= 0 && ( mode & 0xFF ) != P_WAIT )
@@ -140,6 +133,8 @@ int spawnvpe( int mode, const char *name, char * const argv[],
         else                        /* failed or P_WAIT ? */
             remove( rsp_name );     /* remove immediately */
     }
+
+    errno = saved_errno;
 
     return rc;
 }
