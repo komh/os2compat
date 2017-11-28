@@ -953,7 +953,7 @@ int msync( void *addr, size_t len, int flags )
         if( rc )    /* ERROR_FILE_NOT_FOUND menas all private mmaped memory */
             return rc == ERROR_FILE_NOT_FOUND ? 0 : -1;
 
-        return readFromFile( mm->fd, 0, base, -1 );
+        return readFromFile( mm->fd, 0, ( char * )base + getpagesize(), -1 );
     }
 
     return 0;
