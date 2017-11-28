@@ -724,6 +724,10 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
                     {
                         /* duplicate fildes to use later */
                         fildes = dup( fildes );
+
+                        /* prevent a child from inheriting */
+                        fcntl( fildes, F_SETFD,
+                               fcntl( fildes, F_GETFD ) | FD_CLOEXEC );
                     }
 
                     rc = DosAliasMem(( char * )shared_base + pagesize + off,
