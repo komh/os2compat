@@ -939,19 +939,17 @@ int msync( void *addr, size_t len, int flags )
                        addr, len ) == -1 )
         return -1;
 
-    /* read from a file */
-    if( flags & MS_INVALIDATE )
+    /* read from a file if MAP_SHARED */
+    if(( flags & MS_INVALIDATE ) && ( flags & MAP_SHARED ))
     {
         char   name[ SHARED_NAME_MAX_LEN ];
         void  *base;
-        int    rc;
 
         if( mmapGetSharedNameFromFd( mm->fd, name, sizeof( name )) == -1 )
             return -1;
 
-        rc = DosGetNamedSharedMem( &base, name, PAG_READ );
-        if( rc )    /* ERROR_FILE_NOT_FOUND menas all private mmaped memory */
-            return rc == ERROR_FILE_NOT_FOUND ? 0 : -1;
+        if( DosGetNamedSharedMem( &base, name, PAG_READ ) != 0 )
+            return -1;
 
         return readFromFile( mm->fd, 0, ( char * )base + getpagesize(), -1 );
     }
