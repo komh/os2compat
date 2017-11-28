@@ -505,6 +505,12 @@ static int aliasAtAddress( void *pMem, ULONG cbReq, void *pvReq, ULONG fReq )
     return rcRet;
 }
 
+/**
+ * Get access to all the shared memories created with MAP_SHARED only.
+ *
+ * @return 0 on success, or -1 on error
+ *
+ */
 static int mmapGetSharedMem( void )
 {
     os2_mmap *mm;
@@ -551,6 +557,9 @@ static int mmapInherit( void )
     return ( mmapGetAnonMem() ||  mmapGetSharedMem()) ? -1 : 0;
 }
 
+/**
+ * fork() callback
+ */
 static int forkChildCallback( __LIBC_PFORKHANDLE pForkHandle,
                               __LIBC_FORKOP enumOp )
 {
