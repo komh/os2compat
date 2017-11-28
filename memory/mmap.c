@@ -147,7 +147,7 @@ static void mmapFreeMem( void *addr, void *base, int flags )
 {
     if( !( flags & MAP_FIXED ))
     {
-        DosFreeMem( addr );
+        DosFreeMemEx( addr );
 
         if( flags & MAP_SHARED )
         {
@@ -524,8 +524,10 @@ static int mmapGetSharedMem( void )
             if( DosGetNamedSharedMem( &shared_mem, mm->shared_name, fPERM ))
                 return -1;
 
+#if 0
             /* Right ? However, fails without this */
             DosFreeMem( mm->addr );
+#endif
 
             if( aliasAtAddress((char * )mm->base + pagesize + mm->off,
                                mm->len, mm->addr, OBJ_LOCATION )
@@ -545,15 +547,6 @@ static int mmapGetSharedMem( void )
  */
 static int mmapInherit( void )
 {
-    os2_mmap *mm;
-
-    for( mm = m_mmap; mm; mm = mm->prev )
-    {
-        /* remove entries without MAP_SHARED */
-        if( !( mm->flags & MAP_SHARED ))
-            mmapRemoveMmap( mm );
-    }
-
     return ( mmapGetAnonMem() ||  mmapGetSharedMem()) ? -1 : 0;
 }
 
@@ -663,9 +656,9 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         rc = DosQueryMem( addr, &cb, &fl );
         if( rc || ( fl & PAG_FREE ))
         {
-            ULONG ulFlag = fPERM | PAG_COMMIT | OBJ_LOCATION;
+            ULONG ulFlag = fPERM | PAG_COMMIT | OBJ_LOCATION | OBJ_FORK;
 
-            rc = DosAllocMemEx( &addr, len, ulFlag );
+            rc = DosAllocMemEx( &addr, len, ulFlag);
             if( !rc )
                 flags |= MAP_ALLOCATED;
         }
@@ -762,10 +755,11 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         }
         else    /* MAP_PRIVATE ? */
         {
+            ulFlag |= OBJ_FORK;
             /* First, try to allocate in high memory */
-            rc = DosAllocMem( &ret, len, ulFlag | OBJ_ANY );
+            rc = DosAllocMemEx( &ret, len, ulFlag | OBJ_ANY );
             if( rc ) /* Failed ? Try to allocate in low memory */
-                rc = DosAllocMem( &ret, len, ulFlag );
+                rc = DosAllocMemEx( &ret, len, ulFlag );
         }
 
         if( rc )
