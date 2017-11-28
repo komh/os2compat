@@ -41,8 +41,7 @@ typedef struct os2_mmap_s
     int     flags;              /**< protection flags of mapped memory */
 
     /* members for MAP_SHARED */
-    int     fd;             /**< file descriptor of a mapped file
-                             *   for PROT_WRITE */
+    int     fd;             /**< file descriptor of a mapped file */
     off_t   off;            /**< offset of a mapped file */
     void    *base;          /**< base address of a shared mapped memory */
     int     prot;           /**< protection flags of a shared mapped memory */
@@ -720,15 +719,12 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
                 }
                 else
                 {
-                    if( prot & PROT_WRITE )
-                    {
-                        /* duplicate fildes to use later */
-                        fildes = dup( fildes );
+                    /* duplicate fildes to use later */
+                    fildes = dup( fildes );
 
-                        /* prevent a child from inheriting */
-                        fcntl( fildes, F_SETFD,
-                               fcntl( fildes, F_GETFD ) | FD_CLOEXEC );
-                    }
+                    /* prevent inheritance of dup()ed fildes */
+                    fcntl( fildes, F_SETFD,
+                           fcntl( fildes, F_GETFD ) | FD_CLOEXEC );
 
                     rc = DosAliasMem(( char * )shared_base + pagesize + off,
                                      len, &ret, 0 );
@@ -847,13 +843,12 @@ int munmap( void *addr, size_t len )
     if( mm )
     {
         if(( mm->flags & ( MAP_ANON | MAP_SHARED )) == MAP_SHARED
-           && ( mm->prot & PROT_WRITE ))
-        {
-            if( msync( mm->addr, mm->len, MS_SYNC ) == -1 )
-                return -1;
+           && ( mm->prot & PROT_WRITE )
+           && msync( mm->addr, mm->len, MS_SYNC ) == -1 )
+            return -1;
 
+        if( mm->flags & MAP_SHARED )
             close( mm->fd );
-        }
 
         mmapFreeMem( addr, mm->base, mm->flags );
 
