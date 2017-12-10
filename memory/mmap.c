@@ -158,8 +158,8 @@ static void mmapFreeMem( void *addr, void *base, int flags )
                 PULONG pulRefCount = base;
 
                 /* Free a shared memory only once. Otherwise all the aliases
-                * will be invalidated.
-                */
+                 * will be invalidated.
+                 */
                 if( --( *pulRefCount ) == 0 )
                     while( DosFreeMem( base ) == 0 )
                         /* nothing */;
@@ -359,7 +359,7 @@ static int mmapGetAnonMem( void )
 }
 #else
 /**
- * Add MAP_ANON memory to a global anon list.
+ * Add MAP_ANON | MAP_SHARED memory to a global anon list.
  * @param[in] addr pointer to memory to add
  * @param[in] len  length of memory
  * @param[in] prot protection flags of memory
@@ -371,7 +371,7 @@ static int mmapAddAnonMem( void *addr, size_t len, int prot )
 }
 
 /**
- * Remove MAP_ANON memory from a global anon list.
+ * Remove MAP_ANON | MAP_SHARED memory from a global anon list.
  * @param[in] addr pointer to memory to add
  * @return 0 on success, or -1 on error
  */
@@ -509,7 +509,6 @@ static int aliasAtAddress( void *pMem, ULONG cbReq, void *pvReq, ULONG fReq )
  * Get access to all the shared memories created with MAP_SHARED only.
  *
  * @return 0 on success, or -1 on error
- *
  */
 static int mmapGetSharedMem( void )
 {
