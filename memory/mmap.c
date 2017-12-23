@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #include <InnoTekLIBC/backend.h>
 #include <InnoTekLIBC/fork.h>
@@ -52,6 +53,51 @@ typedef struct os2_mmap_s
     struct os2_mmap_s *next;    /**< next list of os2_mmap */
 } os2_mmap;
 static os2_mmap *m_mmap = NULL;
+
+/**
+ * Convert internal error code to libc error code
+ *
+ * @param[in] rc internal error code.
+ *               > 0 : OS/2 error code
+ *               < 0 : libc error code
+ * @return libc error code
+ */
+static int rc2errno( int rc )
+{
+    if( rc )
+    {
+        /* libc error codes */
+        if( rc < 0 )
+            return -rc;
+
+        /* OS/2 error codes */
+        switch( rc )
+        {
+            case ERROR_FILE_NOT_FOUND:      /* 2 */
+                return ENOENT;
+
+            case ERROR_ACCESS_DENIED:       /* 5 */
+            case ERROR_LOCKED:              /* 212 */
+                return EACCES;
+
+            case ERROR_NOT_ENOUGH_MEMORY:   /* 8 */
+                return ENOMEM;
+
+            case ERROR_INTERRUPT:           /* 95 */
+                return EINTR;
+
+            case ERROR_INVALID_PARAMETER:   /* 87  */
+            case ERROR_INVALID_NAME:        /* 123 */
+            case ERROR_ALREADY_EXISTS:      /* 183 */
+            case ERROR_INVALID_ADDRESS:     /* 487 */
+            default:
+                return EINVAL;
+        }
+    }
+
+    /* no error */
+    return 0;
+}
 
 /**
  * Read a file into a memory.
@@ -180,6 +226,7 @@ static void mmapFreeMem( void *addr, void *base, int flags )
 static int mmapSetMem( void *addr, size_t len, int prot )
 {
     ULONG fl = 0;
+    ULONG rc;
 
     if( prot & PROT_READ )
         fl |= PAG_READ;
@@ -193,9 +240,11 @@ static int mmapSetMem( void *addr, size_t len, int prot )
     if( !fl )            /* PROT_NONE ? */
         fl |= PAG_READ;  /* Set READ flag if PROT_NONE */
 
-    if( DosSetMem( addr, len, fl ) == 0 )
+    rc = DosSetMem( addr, len, fl );
+    if( rc == 0 )
         return 0;
 
+    errno = rc2errno( rc );
     return -1;
 }
 
@@ -230,16 +279,24 @@ static int mmapAddAnonMem( void *addr, size_t len, int prot )
     PMMAPANONLIST pmalEnd;
 
     ULONG ulFlag = fPERM | PAG_COMMIT;
+    ULONG rc;
 
     if( !addr )
-        return -1;
+        return errno = EINVAL, -1;
 
-    if( DosAllocSharedMem( &pAnonList, SHARED_NAME_MMAP_ANON,
-                           SHARED_NAME_MMAP_ANON_SIZE, ulFlag | OBJ_ANY )
-        && DosAllocSharedMem( &pAnonList, SHARED_NAME_MMAP_ANON,
-                              SHARED_NAME_MMAP_ANON_SIZE, ulFlag )
-        && DosGetNamedSharedMem( &pAnonList, SHARED_NAME_MMAP_ANON, fPERM ))
+    rc = DosAllocSharedMem( &pAnonList, SHARED_NAME_MMAP_ANON,
+                            SHARED_NAME_MMAP_ANON_SIZE, ulFlag | OBJ_ANY );
+    if( rc )
+        rc =DosAllocSharedMem( &pAnonList, SHARED_NAME_MMAP_ANON,
+                               SHARED_NAME_MMAP_ANON_SIZE, ulFlag );
+    if( rc )
+        rc = DosGetNamedSharedMem( &pAnonList, SHARED_NAME_MMAP_ANON, fPERM );
+
+    if( rc )
+    {
+        errno = rc2errno( rc );
         return -1;
+    }
 
     /* DosAllocSharedMem() initializes a whole pAnonList with 0 */
     pulRefCount = pAnonList;
@@ -267,6 +324,8 @@ static int mmapAddAnonMem( void *addr, size_t len, int prot )
 
     DosFreeMem( pAnonList );
 
+    /* no empty slot */
+    errno = ENOMEM;
     return -1;
 }
 
@@ -282,8 +341,14 @@ static int mmapRemoveAnonMem( void *addr )
     PMMAPANONLIST pmal;
     PMMAPANONLIST pmalEnd;
 
-    if( DosGetNamedSharedMem( &pAnonList, SHARED_NAME_MMAP_ANON, fPERM ))
+    ULONG rc;
+
+    rc = DosGetNamedSharedMem( &pAnonList, SHARED_NAME_MMAP_ANON, fPERM );
+    if( rc )
+    {
+        errno = rc2errno( rc );
         return -1;
+    }
 
     pulRefCount = pAnonList;
 
@@ -311,6 +376,8 @@ static int mmapRemoveAnonMem( void *addr )
 
     DosFreeMem( pAnonList );
 
+    /* not found */
+    errno = EINVAL;
     return -1;
 }
 
@@ -582,15 +649,18 @@ _FORK_CHILD1( 0xFFFF00FF, forkChildCallback );
  */
 int mmapGetSharedNameFromFd( int fd, char *name, size_t size )
 {
+    int rc;
+
     if( size <= SHARED_NAME_PREFIX_LEN )
-        return -1;
+        return errno = EOVERFLOW, -1;
 
     strcpy( name, SHARED_NAME_PREFIX );
 
     /* get a filename from a file descriptor */
-    if( __libc_Back_ioFHToPath( fd, name + SHARED_NAME_PREFIX_LEN,
-                                size - SHARED_NAME_PREFIX_LEN ))
-        return -1;
+    rc = __libc_Back_ioFHToPath( fd, name + SHARED_NAME_PREFIX_LEN,
+                                 size - SHARED_NAME_PREFIX_LEN );
+    if( rc )
+        return errno = -rc, -1;
 
     /* replace ':' with '_' */
     name[ SHARED_NAME_PREFIX_LEN + 1 ] = '_';
@@ -621,30 +691,31 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
     void  *shared_base = NULL;
     char   shared_name_buf[ SHARED_NAME_MAX_LEN ] = "";
     int    read_file = !( flags & MAP_ANON );
+    int    saved_errno;
 
     pagesize = getpagesize();
 
     /* addr should be multiple of a page size if MAP_FIXED */
     if(( flags & MAP_FIXED ) && (( uintptr_t )addr % pagesize ))
-        return MAP_FAILED;
+        return errno = EINVAL, MAP_FAILED;
 
     /* off should be multiple of a page size */
     if( off % pagesize)
-        return MAP_FAILED;
+        return errno = EINVAL, MAP_FAILED;
 
     if(( flags & ( MAP_SHARED | MAP_PRIVATE )) == ( MAP_SHARED | MAP_PRIVATE )
        || !( flags & ( MAP_SHARED | MAP_PRIVATE )))
-        return MAP_FAILED;
+        return errno = EINVAL, MAP_FAILED;
 
     /* MAP_FIXED with MAP_SHARED is not supported */
     if(( flags & ( MAP_FIXED | MAP_SHARED )) == ( MAP_FIXED | MAP_SHARED ))
-        return MAP_FAILED;
+        return errno = EINVAL, MAP_FAILED;
 
     /* check fd has a write access flag if PROT_WRITE with MAP_SHARED */
     if( !( flags & MAP_ANON ) && ( flags & MAP_SHARED )
         && ( prot & PROT_WRITE )
         && !( fcntl( fildes, F_GETFL ) & ( O_WRONLY | O_RDWR )))
-        return MAP_FAILED;
+        return errno = EINVAL, MAP_FAILED;
 
     if( flags & MAP_FIXED )
     {
@@ -666,7 +737,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
                             fPERM | (( fl & PAG_COMMIT ) ^ PAG_COMMIT ));
 
         if( rc )
-            return MAP_FAILED;
+            return errno = rc2errno( rc ), MAP_FAILED;
 
         ret = addr;
     }
@@ -712,9 +783,11 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
             {
                 if( flags & MAP_ANON )
                 {
-                    rc = mmapAddAnonMem( shared_base, len, prot );
-                    if( rc == -1 )
+                    if( mmapAddAnonMem( shared_base, len, prot ) == -1 )
+                    {
+                        rc = -errno;
                         DosFreeMem( shared_base );
+                    }
 
                     ret = shared_base;
                 }
@@ -722,32 +795,30 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
                 {
                     /* duplicate fildes to use later */
                     fildes = dup( fildes );
-
-                    /* prevent inheritance of dup()ed fildes */
-                    fcntl( fildes, F_SETFD,
-                           fcntl( fildes, F_GETFD ) | FD_CLOEXEC );
-
-                    rc = DosAliasMem(( char * )shared_base + pagesize + off,
-                                     len, &ret, 0 );
-                    if( fildes == -1 || rc )
+                    if( fildes == -1 )
                     {
-                        if( !rc )
-                        {
-                            DosFreeMem( ret );
-
-                            rc = -1;
-                        }
-
+                        rc = -errno;
                         DosFreeMem( shared_base );
                     }
                     else
                     {
-                        PULONG pulRefCount = shared_base;
+                        /* prevent inheritance of dup()ed fildes */
+                        fcntl( fildes, F_SETFD,
+                               fcntl( fildes, F_GETFD ) | FD_CLOEXEC );
 
-                        if( read_file )
-                            *pulRefCount = 1;
+                        rc = DosAliasMem(( char * )shared_base +
+                                         pagesize + off, len, &ret, 0 );
+                        if( rc )
+                            DosFreeMem( shared_base );
                         else
-                            ( *pulRefCount )++;
+                        {
+                            PULONG pulRefCount = shared_base;
+
+                            if( read_file )
+                                *pulRefCount = 1;
+                            else
+                                ( *pulRefCount )++;
+                        }
                     }
                 }
             }
@@ -762,13 +833,18 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         }
 
         if( rc )
+        {
+            errno = rc2errno( rc );
             return MAP_FAILED;
+        }
     }
 
     new_mmap = malloc( sizeof( os2_mmap ));
     if( !new_mmap )
     {
+        saved_errno = errno;
         mmapFreeMem( ret, shared_base, flags );
+        errno = saved_errno;
 
         return MAP_FAILED;
     }
@@ -809,7 +885,9 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
         if( readFromFile( fildes, read_off, read_buf, read_len ) == -1 )
         {
+            saved_errno = errno;
             munmap( ret, len );
+            errno = saved_errno;
 
             return MAP_FAILED;
         }
@@ -817,7 +895,9 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
 
     if( mprotect( ret, len, prot ))
     {
+        saved_errno = errno;
         munmap( ret, len );
+        errno = saved_errno;
 
         return MAP_FAILED;
     }
@@ -834,7 +914,7 @@ int munmap( void *addr, size_t len )
     os2_mmap *mm;
 
     if(( uintptr_t )addr % getpagesize())
-        return -1;
+        return errno = EINVAL, -1;
 
     for( mm = m_mmap; mm; mm = mm->prev )
     {
@@ -859,6 +939,7 @@ int munmap( void *addr, size_t len )
         return 0;
     }
 
+    errno = EINVAL;
     return -1;
 }
 
@@ -871,7 +952,7 @@ int mprotect( void *addr, size_t len, int prot )
     os2_mmap *mm;
 
     if(( uintptr_t )addr % getpagesize())
-        return -1;
+        return errno = EINVAL, -1;
 
     for( mm = m_mmap; mm; mm = mm->prev )
     {
@@ -880,10 +961,14 @@ int mprotect( void *addr, size_t len, int prot )
             break;
     }
 
-    if( mm && mmapSetMem( addr, len, prot ) == 0 )
-        return 0;
+    /* not found */
+    if( !mm )
+        return errno = EINVAL, -1;
 
-    return -1;
+    if( mmapSetMem( addr, len, prot ) == -1 )
+        return -1;
+
+    return 0;
 }
 
 /**
@@ -903,13 +988,13 @@ int msync( void *addr, size_t len, int flags )
     os2_mmap *mm;
 
     if( !( flags & ( MS_ASYNC | MS_SYNC | MS_INVALIDATE )))
-        return -1;
+        return errno = EINVAL, -1;
 
     if(( flags & MS_ASYNC ) && ( flags & MS_SYNC ))
-        return -1;
+        return errno = EINVAL, -1;
 
     if(( uintptr_t )addr % getpagesize())
-        return -1;
+        return errno = EINVAL, -1;
 
     /* find addr */
     for( mm = m_mmap; mm; mm = mm->prev )
@@ -921,7 +1006,7 @@ int msync( void *addr, size_t len, int flags )
 
     /* not found */
     if( !mm )
-        return -1;
+        return errno = EINVAL, -1;
 
     /* nothing to do for MAP_ANON */
     if( mm->flags & MAP_ANON )
@@ -941,12 +1026,17 @@ int msync( void *addr, size_t len, int flags )
     {
         char   name[ SHARED_NAME_MAX_LEN ];
         void  *base;
+        int rc;
 
         if( mmapGetSharedNameFromFd( mm->fd, name, sizeof( name )) == -1 )
             return -1;
 
-        if( DosGetNamedSharedMem( &base, name, PAG_READ ) != 0 )
+        rc = DosGetNamedSharedMem( &base, name, PAG_READ );
+        if( rc )
+        {
+            errno = rc2errno( rc );
             return -1;
+        }
 
         return readFromFile( mm->fd, 0, ( char * )base + getpagesize(), -1 );
     }
