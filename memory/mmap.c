@@ -263,7 +263,7 @@ typedef struct MMAPANONLIST
 } MMAPANONLIST, *PMMAPANONLIST;
 
 /**
- * Add MAP_ANON memory to a global anon list.
+ * Add MAP_ANON | MAP_SHARED memory to a global anon list.
  * @param[in] addr pointer to memory to add
  * @param[in] len  length of memory
  * @param[in] prot protection flags of memory
@@ -330,7 +330,7 @@ static int mmapAddAnonMem( void *addr, size_t len, int prot )
 }
 
 /**
- * Remove MAP_ANON memory from a global anon list.
+ * Remove MAP_ANON | MAP_SHARED memory from a global anon list.
  * @param[in] addr pointer to memory to add
  * @return 0 on success, or -1 on error
  */
