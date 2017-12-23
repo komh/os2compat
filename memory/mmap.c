@@ -109,6 +109,9 @@ static int rc2errno( int rc )
  */
 static int readFromFile( int fd, off_t off, void *buf, size_t len )
 {
+    char *rdbuf = buf;
+    int   rdlen;
+
     int pos = lseek( fd, 0, SEEK_CUR ); /* Get a current position */
 
     if( pos == -1 )
@@ -122,8 +125,17 @@ static int readFromFile( int fd, off_t off, void *buf, size_t len )
         len = filelength( fd );
 
     /* Read in a file */
-    if( read( fd, buf, len ) == -1 )
-        return -1;
+    while( len > 0 )
+    {
+        rdlen = read( fd, rdbuf, len );
+        if( rdlen == -1 )
+            return -1;
+        if( rdlen == 0 )
+            break;
+
+        len   -= rdlen;
+        rdbuf += rdlen;
+    }
 
     /* Restore the position */
     if( lseek( fd, pos, SEEK_SET ) == -1 )
