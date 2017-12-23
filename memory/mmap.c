@@ -112,14 +112,17 @@ static int readFromFile( int fd, off_t off, void *buf, size_t len )
     char *rdbuf = buf;
     int   rdlen;
 
+    int rc = -1;
+    int saved_errno;
+
     int pos = lseek( fd, 0, SEEK_CUR ); /* Get a current position */
 
     if( pos == -1 )
         return -1;
 
     /* Seek to offset off */
-    if( lseek( fd, off, SEEK_SET ) == -1)
-        return -1;
+    if( lseek( fd, off, SEEK_SET ) == -1 )
+        goto exit_lseek;
 
     if( len == -1 )
         len = filelength( fd );
@@ -129,7 +132,8 @@ static int readFromFile( int fd, off_t off, void *buf, size_t len )
     {
         rdlen = read( fd, rdbuf, len );
         if( rdlen == -1 )
-            return -1;
+            goto exit_lseek;
+
         if( rdlen == 0 )
             break;
 
@@ -137,11 +141,23 @@ static int readFromFile( int fd, off_t off, void *buf, size_t len )
         rdbuf += rdlen;
     }
 
+    rc = 0;
+
+exit_lseek:
+    saved_errno = errno;
+
     /* Restore the position */
     if( lseek( fd, pos, SEEK_SET ) == -1 )
-        return -1;
+    {
+        if( rc == 0 )
+            saved_errno = errno;
 
-    return 0;
+        rc = -1;
+    }
+
+    errno = saved_errno;
+
+    return rc;
 }
 
 /**
@@ -154,22 +170,37 @@ static int readFromFile( int fd, off_t off, void *buf, size_t len )
  */
 static int writeToFile( int fd, off_t off, void *buf, size_t len )
 {
+    int rc = -1;
+    int saved_errno;
+
     int pos = lseek( fd, 0, SEEK_CUR ); /* Get a current position */
 
     if( pos == -1 )
         return -1;
 
     /* Seek to ofset off */
-    if( lseek( fd, off, SEEK_SET ) == -1)
-        return -1;
+    if( lseek( fd, off, SEEK_SET ) == -1 )
+        goto exit_lseek;
 
     /* Write to a file */
     if( write( fd, buf, len ) == -1 )
-        return -1;
+        goto exit_lseek;
+
+    rc = 0;
+
+exit_lseek:
+    saved_errno = errno;
 
     /* Restore the position */
     if( lseek( fd, pos, SEEK_SET ) == -1 )
-        return -1;
+    {
+        if( rc == 0 )
+            saved_errno = errno;
+
+        rc = -1;
+    }
+
+    errno = saved_errno;
 
     return 0;
 }
