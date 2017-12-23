@@ -647,7 +647,7 @@ _FORK_CHILD1( 0xFFFF00FF, forkChildCallback );
  * @param[in]  size maximum size of name
  * @return 0 on success, or -1 error
  */
-int mmapGetSharedNameFromFd( int fd, char *name, size_t size )
+static int mmapGetSharedNameFromFd( int fd, char *name, size_t size )
 {
     int rc;
 
