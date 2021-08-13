@@ -42,6 +42,9 @@ static int rc2errno( ULONG rc )
 
     switch( rc )
     {
+        case NO_ERROR:
+            break;
+
         case ERROR_INVALID_HANDLE :
             err = EINVAL;
             break;
@@ -68,6 +71,10 @@ static int rc2errno( ULONG rc )
 
         case ERROR_TIMEOUT :
             err = EAGAIN;
+            break;
+
+        default:
+            err = EINVAL;
             break;
     }
 
