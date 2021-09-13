@@ -91,7 +91,8 @@ BIN_PROGRAMS := mmap-1 \
                 scandir-1 \
                 if_nameindex-1 \
                 _response-1 \
-                getrusage-1
+                getrusage-1 \
+                selectex-1
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -153,6 +154,9 @@ _response-1_SRCS := _response-1.c ../process/_response.c
 
 getrusage-1_SRCS := getrusage-1.c ../process/getrusage.c
 getrusage-1_CFLAGS := -I../process
+
+selectex-1_SRCS := selectex-1.c ../network/selectex.c
+selectex-1_CFLAGS := -I../network
 
 # 1. specify a list of libraries without an extension with
 #

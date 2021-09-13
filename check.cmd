@@ -49,6 +49,8 @@ call checkCC 'network/if_nameindex.h', 'network/if_nameindex.c', ,
 call checkCC 'stdlib.h', 'process/_response.c', '_response( 0, 0 );';
 call checkCC 'sys/types.h sys/resource.h', 'process/getrusage.c', ,
              'getrusage( 0, 0 );';
+call checkCC 'network/selectex.h', 'network/selectex.c', ,
+             'selectEx( 0, 0, 0, 0, 0 );';
 
 say 'Check completed';
 
