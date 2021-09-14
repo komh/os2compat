@@ -19,9 +19,9 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 
-#include "test.h"
-
 #include "selectex.h"
+
+#include "test.h"
 
 struct threadargs
 {
