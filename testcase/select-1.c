@@ -1,5 +1,5 @@
 /*
- * selectex() test program
+ * select() test program
  *
  * Copyright (C) 2021 KO Myung-Hun <komh@chollian.net>
  *
@@ -18,8 +18,7 @@
 
 #include <sys/time.h>
 #include <sys/socket.h>
-
-#include "selectex.h"
+#include <sys/select.h>
 
 #include "test.h"
 
@@ -54,40 +53,40 @@ static void pipetest( void )
     /* wait mode test */
     tv.tv_sec = 0;
     tv.tv_usec = 0;
-    TEST_EQUAL( selectex( 0, NULL, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( 0, NULL, NULL, NULL, &tv ), 0 );
 
     /* not read-ready test */
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     write( ph[ 1 ], "hello", 5 );
 
     /* read-ready test */
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 1 );
 
     /* read-ready by partial read() test */
     TEST_EQUAL( read( ph[ 0 ], buf, 3 ), 3 );
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
 
     /* not read-ready by read() test */
     TEST_EQUAL( read( ph[ 0 ], buf, 2 ), 2 );
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* mis-placed fdset test */
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, NULL, &rdset, NULL, &tv ), -1 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, NULL, &rdset, NULL, &tv ), -1 );
 
     /* write-ready test */
     FD_ZERO( &wrset );
     FD_SET( ph[ 1 ], &wrset );
-    TEST_EQUAL( selectex( ph[ 1 ] + 1, NULL, &wrset, NULL, &tv ), 1 );
+    TEST_EQUAL( select( ph[ 1 ] + 1, NULL, &wrset, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 1 ], &wrset ), 1 );
 
     /* mis-placed fdset test */
-    TEST_EQUAL( selectex( ph[ 1 ] + 1, &wrset, NULL, NULL, &tv ), -1 );
+    TEST_EQUAL( select( ph[ 1 ] + 1, &wrset, NULL, NULL, &tv ), -1 );
 
     /* time-limit wait test */
     args.fd = ph[ 1 ];
@@ -99,7 +98,7 @@ static void pipetest( void )
     FD_SET( ph[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 200 * 1000;
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 1 );
 
     /* clear a pipe */
@@ -115,12 +114,12 @@ static void pipetest( void )
     FD_SET( ph[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 200 * 1000;
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* wait for a thread to finish */
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 1 );
 
     /* clear a pipe */
@@ -148,28 +147,28 @@ static void sockettest( void )
     FD_SET( socks[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 0;
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     write( socks[ 1 ], "hello", 5 );
 
     /* read-ready test */
     FD_ZERO( &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 1 );
 
     /* read-ready by partial read() test */
     TEST_EQUAL( read( socks[ 0 ], buf, 3 ), 3 );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
 
     /* not read-ready by read() test */
     TEST_EQUAL( read( socks[ 0 ], buf, 2 ), 2 );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* write-ready test */
     FD_ZERO( &wrset );
     FD_SET( socks[ 1 ], &wrset );
-    TEST_EQUAL( selectex( socks[ 1 ] + 1, NULL, &wrset, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 1 ] + 1, NULL, &wrset, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 1 ], &wrset ), 1 );
 
     /* time-limit wait test */
@@ -182,7 +181,7 @@ static void sockettest( void )
     FD_SET( socks[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 200 * 1000;
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 1 );
 
     /* clear a socket */
@@ -198,12 +197,12 @@ static void sockettest( void )
     FD_SET( socks[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 200 * 1000;
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* wait for a thread to finish */
     FD_ZERO( &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 1 );
 
     /* clear a socket */
@@ -240,7 +239,7 @@ static void mixedtest( void )
     FD_SET( socks[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 0;
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( fd, &rdset ), 1 );
 
     write( socks[ 1 ], "hello", 5 );
@@ -249,7 +248,7 @@ static void mixedtest( void )
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 0 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 1 );
 
@@ -259,7 +258,7 @@ static void mixedtest( void )
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 2 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 2 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 1 );
 
@@ -270,7 +269,7 @@ static void mixedtest( void )
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 0 );
 
@@ -281,14 +280,14 @@ static void mixedtest( void )
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* write-ready for a file, a pipe and a socket test */
     FD_ZERO( &wrset );
     FD_SET( fd, &wrset );
     FD_SET( ph[ 1 ], &wrset );
     FD_SET( socks[ 1 ], &wrset );
-    TEST_EQUAL( selectex( socks[ 1 ] + 1, NULL, &wrset, NULL, &tv ), 3 );
+    TEST_EQUAL( select( socks[ 1 ] + 1, NULL, &wrset, NULL, &tv ), 3 );
     TEST_BOOL( FD_ISSET( fd, &wrset ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 1 ], &wrset ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 1 ], &wrset ), 1 );
@@ -305,7 +304,7 @@ static void mixedtest( void )
     FD_SET( socks[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 200 * 1000;
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 0 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 1 );
 
@@ -323,13 +322,13 @@ static void mixedtest( void )
     FD_SET( socks[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 200 * 1000;
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* wait for a thread to finish */
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 0 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 1 );
 
@@ -348,7 +347,7 @@ static void mixedtest( void )
     FD_SET( socks[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 200 * 1000;
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 0 );
 
@@ -366,13 +365,13 @@ static void mixedtest( void )
     FD_SET( socks[ 0 ], &rdset );
     tv.tv_sec = 0;
     tv.tv_usec = 200 * 1000;
-    TEST_EQUAL( selectex( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* wait for a thread to finish */
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( selectex( ph[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
+    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 0 );
 

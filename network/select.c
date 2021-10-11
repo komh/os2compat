@@ -1,5 +1,5 @@
 /*
- * selectex() implementation for OS/2 kLIBC
+ * select() supporting files, pipes and sockets for OS/2 kLIBC
  *
  * Copyright (C) 2021 KO Myung-Hun <komh@chollian.net>
  *
@@ -30,9 +30,7 @@
 
 #include <sys/builtin.h>
 
-#include "selectex.h"
-
-#define PIPE_NAME_BASE "\\PIPE\\OS2COMPAT\\NETWORK\\SELECTEX"
+#define PIPE_NAME_BASE "\\PIPE\\OS2COMPAT\\NETWORK\\SELECT"
 
 int _std_fcntl( int handle, int request, ... );
 
@@ -115,6 +113,9 @@ int pipe( int *ph )
 
     return 0;
 }
+
+/* alias */
+int _std_select( int, fd_set *, fd_set *, fd_set *, struct timeval * );
 
 #define ENABLE_CONSOLE 0
 
@@ -339,16 +340,16 @@ static void waitsocks( void *arg )
     WAITSOCKSARGS wsa = *( PWAITSOCKSARGS )arg;
     int n;
 
-    n = select( wsa.parm->nmaxfds, &wsa.parm->fdset[ FDSET_READ ],
-                &wsa.parm->fdset[ FDSET_WRITE ],
-                &wsa.parm->fdset[ FDSET_EXCEPT ], wsa.timeout );
+    n = _std_select( wsa.parm->nmaxfds, &wsa.parm->fdset[ FDSET_READ ],
+                     &wsa.parm->fdset[ FDSET_WRITE ],
+                     &wsa.parm->fdset[ FDSET_EXCEPT ], wsa.timeout );
 
     if( n > 0 )
         DosPostEventSem( wsa.hev );
 }
 
-int selectex( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
-              struct timeval *timeout )
+int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
+            struct timeval *timeout )
 {
     SELECTPARM parms[ ST_END + 1 ] = {{ 0, }, };
     int nowaitmode = timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0;
@@ -362,7 +363,7 @@ int selectex( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
 
     /* wait mode ? */
     if( !rdset && !wrset && !exset )
-        return select( 0, NULL, NULL, NULL, timeout );
+        return _std_select( 0, NULL, NULL, NULL, timeout );
 
     /* categorize and check fds */
     for( i = 0; i < nfds; i++ )
@@ -462,7 +463,7 @@ int selectex( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
             eset = parm->fdset[ FDSET_EXCEPT ];
         }
 
-        if( select( parm->nmaxfds, prset, pwset, peset, &nowait ) > 0 )
+        if( _std_select( parm->nmaxfds, prset, pwset, peset, &nowait ) > 0 )
         {
             if( !nowaitmode )
             {
