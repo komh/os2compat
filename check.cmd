@@ -48,6 +48,8 @@ call checkCC 'stdlib.h', 'process/_response.c', '_response( 0, 0 );';
 call checkCC 'sys/types.h sys/resource.h', 'process/getrusage.c', ,
              'getrusage( 0, 0 );';
 call checkCC 'sys/select.h', 'network/select.c', 'select( 0, 0, 0, 0, 0 );';
+call checkCC 'fcntl.h', 'io/fcntl.c', 'fcntl( 0, 0, 0 );';
+call checkCC 'io.h', 'io/pipe.c', 'pipe( 0 );';
 
 say 'Check completed';
 

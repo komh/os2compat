@@ -10,6 +10,10 @@
  * http://www.wtfpl.net/ for more details.
  */
 
+/*
+ * Dependencies: io/pipe.c
+ */
+
 #define INCL_DOS
 #define INCL_DOSERRORS
 #define INCL_KBD
@@ -17,9 +21,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <fcntl.h>
-#include <process.h>
 #include <io.h>
 #include <errno.h>
 
@@ -27,92 +28,6 @@
 #include <sys/time.h>
 #include <sys/select.h>
 #include <sys/stat.h>
-
-#include <sys/builtin.h>
-
-#define PIPE_NAME_BASE "\\PIPE\\OS2COMPAT\\NETWORK\\SELECT"
-
-int _std_fcntl( int handle, int request, ... );
-
-/* override libc fcntl() */
-int fcntl( int handle, int request, ... )
-{
-    va_list argPtr;
-    int     arg;
-    ULONG   ulState;
-
-    va_start( argPtr, request );
-    arg = va_arg( argPtr, int );
-    va_end( argPtr );
-
-    /* named pipe */
-    if( !DosQueryNPHState( handle, &ulState ))
-    {
-        if( request == F_GETFL )
-            return ( ulState & NP_NOWAIT ) ? O_NONBLOCK : 0;
-
-        if( request == F_SETFL )
-        {
-            if( arg == O_NONBLOCK )
-                ulState |= NP_NOWAIT;
-            else
-                ulState &= ~NP_NOWAIT;
-
-            /* extract relevant flags */
-            ulState &= NP_NOWAIT | NP_READMODE_MESSAGE;
-
-            return DosSetNPHState( handle, ulState ) ? -1 : 0;
-        }
-    }
-
-    return _std_fcntl( handle, request, arg );
-}
-
-/* override libc pipe() */
-int pipe( int *ph )
-{
-    static volatile unsigned pipes = 0;
-
-    HPIPE hpipe;
-    HFILE hpipeWrite;
-    ULONG ulAction;
-
-    char szPipeName[ 80 ];
-
-    __atomic_increment( &pipes );
-    snprintf( szPipeName, sizeof( szPipeName ),
-              "%s\\%x\\%x", PIPE_NAME_BASE, ( unsigned )getpid(), pipes );
-
-    /* NP_NOWAIT should be specified, otherwise DosConnectNPipe() blocks.
-     * If you want to change pipes to blocking-mode, then use DosSetNPHState()
-     * after DosConnectNPipe()
-     */
-    DosCreateNPipe( szPipeName,
-                    &hpipe,
-                    NP_ACCESS_INBOUND | NP_INHERIT,
-                    NP_NOWAIT | NP_TYPE_BYTE | NP_READMODE_BYTE | 1,
-                    32768, 32768, 0 );
-
-    DosConnectNPipe( hpipe );
-
-    DosOpen( szPipeName, &hpipeWrite, &ulAction, 0, FILE_NORMAL,
-             OPEN_ACTION_OPEN_IF_EXISTS,
-             OPEN_SHARE_DENYREADWRITE | OPEN_ACCESS_WRITEONLY,
-             NULL );
-
-    /* _imphandle() is not required specifically, because kLIBC imports
-     * native handles automatically if needed. But here use _imphandle()
-     * specifically.
-     */
-    ph[ 0 ] = _imphandle( hpipe );
-    ph[ 1 ] = _imphandle( hpipeWrite );
-
-    /* default to blocking mode */
-    DosSetNPHState( ph[ 0 ], NP_WAIT | NP_READMODE_BYTE );
-    DosSetNPHState( ph[ 1 ], NP_WAIT | NP_READMODE_BYTE );
-
-    return 0;
-}
 
 /* alias */
 int _std_select( int, fd_set *, fd_set *, fd_set *, struct timeval * );

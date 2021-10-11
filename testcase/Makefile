@@ -147,7 +147,7 @@ _response-1_SRCS := _response-1.c ../process/_response.c
 getrusage-1_SRCS := getrusage-1.c ../process/getrusage.c
 getrusage-1_CFLAGS := -I../process
 
-select-1_SRCS := select-1.c ../network/select.c
+select-1_SRCS := select-1.c ../network/select.c ../io/pipe.c
 select-1_CFLAGS := -I../network
 
 # 1. specify a list of libraries without an extension with
