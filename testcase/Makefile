@@ -82,8 +82,6 @@ BIN_PROGRAMS := mmap-1 \
                 mmap-8 \
                 spawnvpe-1 \
                 spawnvpe-1-child \
-                non-block-pipe-1 \
-                non-block-pipe-2 \
                 freopen-1 \
                 setmode-1 \
                 poll-1 \
@@ -127,12 +125,6 @@ spawnvpe-1_CFLAGS := -I../process
 
 spawnvpe-1-child_SRCS    := spawnvpe-1-child.c
 spawnvpe-1-child_LDFLAGS := -Zargs-resp
-
-non-block-pipe-1_SRCS := non-block-pipe-1.c ../io/non-block-pipe.c
-non-block-pipe-1_CFLAGS := -I../io
-
-non-block-pipe-2_SRCS := non-block-pipe-1.c ../io/non-block-pipe.c
-non-block-pipe-2_CFLAGS := -I../io
 
 freopen-1_SRCS := freopen-1.c ../io/freopen.c
 
