@@ -21,7 +21,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#include "network/socklen_t.h"
+#include "socklen_t.h"
 
 #ifdef __cplusplus
 extern "C" {
