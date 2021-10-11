@@ -44,9 +44,9 @@
 /*
  * Synchronization flags
  */
+#define MS_SYNC         0x0000  /* Perform synchronous writes */
 #define MS_ASYNC        0x0001  /* Perform asynchronous writes */
-#define MS_SYNC         0x0002  /* Perform synchronous writes */
-#define MS_INVALIDATE   0x0004  /* Invalidate cached data */
+#define MS_INVALIDATE   0x0002  /* Invalidate cached data */
 
 #ifdef __cplusplus
 extern "C" {

@@ -1030,7 +1030,8 @@ int msync( void *addr, size_t len, int flags )
 {
     os2_mmap *mm;
 
-    if( !( flags & ( MS_ASYNC | MS_SYNC | MS_INVALIDATE )))
+    /* consider MS_SYNC == 0x0000 */
+    if( flags && !( flags & ( MS_ASYNC | MS_SYNC | MS_INVALIDATE )))
         return errno = EINVAL, -1;
 
     if(( flags & MS_ASYNC ) && ( flags & MS_SYNC ))
@@ -1058,7 +1059,7 @@ int msync( void *addr, size_t len, int flags )
     /* nothing to do for MS_ASYNC */
 
     /* write to a file */
-    if(( flags & MS_SYNC )
+    if(!( flags & MS_ASYNC )
        && ( mm->flags & MAP_SHARED ) && ( mm->prot & PROT_WRITE )
        && writeToFile( mm->fd, mm->off + ( char * )addr - ( char * )mm->addr,
                        addr, len ) == -1 )
