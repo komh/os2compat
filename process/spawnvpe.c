@@ -66,6 +66,7 @@ static void spawnvpe_remove_rsp_temp( int pid )
     }
 }
 
+__attribute__((destructor))
 static void spawnvpe_cleanup( void )
 {
     spawnvpe_remove_rsp_temp( -1 );
@@ -78,21 +79,12 @@ int _std_spawnvpe( int mode, const char *name, char * const argv[],
 int spawnvpe( int mode, const char *name, char * const argv[],
               char * const envp[])
 {
-    static int registered = 0;
-
     char *rsp_argv[ 3 ];
     char  rsp_name_arg[] = "@spawnvpe-rsp-XXXXXX";
     char *rsp_name = &rsp_name_arg[ 1 ];
     int   i;
     int   rc;
     int   saved_errno;
-
-    /* register cleanup entry */
-    if( !registered )
-    {
-      if( !atexit( spawnvpe_cleanup ))
-        registered = 1;
-    }
 
     rc = _std_spawnvpe( mode, name, argv, envp );
     saved_errno = errno;
