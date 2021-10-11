@@ -130,7 +130,8 @@ freopen-1_SRCS := freopen-1.c ../io/freopen.c
 
 setmode-1_SRCS := setmode-1.c ../io/setmode.c
 
-poll-1_SRCS := poll-1.c ../network/poll.c
+poll-1_SRCS := poll-1.c ../network/poll.c ../network/select.c ../io/pipe.c \
+               ../io/fcntl.c
 poll-1_CFLAGS := -I../network
 
 semaphore-1_SRCS := semaphore-1.c ../thread/semaphore.c

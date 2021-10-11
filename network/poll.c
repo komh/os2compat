@@ -20,6 +20,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  */
 
+/*
+ * Dependecies: network/select.c
+ */
+
+#define INCL_DOS
+#include <os2.h>
+
 #include <types.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -31,6 +38,26 @@
 #include <sys/stat.h>
 
 #include "poll.h"
+
+static int checkfd( int fd )
+{
+    struct stat st;
+    ULONG ulState;
+
+    if( fstat( fd, &st ) == -1 )
+        return -1;
+
+    /* files or sockets */
+    if( S_ISREG( st.st_mode ) || S_ISSOCK( st.st_mode ))
+        return 0;
+
+    /* named pipes */
+    if( DosQueryNPHState( fd, &ulState ) == 0 )
+        return 0;
+
+    /* not supported handles */
+    return -1;
+}
 
 int os2compat_poll( struct os2compat_pollfd *fds, unsigned nfds, int timeout )
 {
@@ -50,20 +77,14 @@ int os2compat_poll( struct os2compat_pollfd *fds, unsigned nfds, int timeout )
     for( i = 0; i < nfds; i++ )
     {
         int fd = fds[ i ].fd;
-        struct stat stbuf;
 
         fds[ i ].revents = 0;
 
-        if( fstat( fd, &stbuf ) == -1 ||
-            (errno = 0, !S_ISSOCK( stbuf.st_mode )))
+        if( checkfd( fd ) == -1 )
         {
             if( fd >= 0 )
             {
-                /* If regular files, assume they are ready for all modes */
-                fds[ i ].revents = ( !errno && S_ISREG( stbuf.st_mode ))
-                                   ? ( fds[ i ].events &
-                                       ( POLLIN | POLLOUT | POLLPRI ))
-                                   : POLLNVAL;
+                fds[ i ].revents = POLLNVAL;
 
                 non_sockets++;
             }
