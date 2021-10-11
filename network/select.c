@@ -409,7 +409,7 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
             /* then, timed-out */
             n = 0;
 
-            goto cleanup;
+            goto mergefds;
         }
 
         if( DosCreateMuxWaitSem( NULL, &hmux, 0, NULL, DCMW_WAIT_ANY ))
@@ -535,15 +535,15 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
 cleanup_mux:
         DosCloseMuxWaitSem( hmux );
 
-        if( n == 0 || err != 0 )
+        if( err != 0 )
         {
-            if( err != 0 )
-                errno = err;
+            errno = err;
 
             goto cleanup;
         }
     }
 
+mergefds:
     if( rdset )
         FD_ZERO( rdset );
 
@@ -553,23 +553,27 @@ cleanup_mux:
     if( exset )
         FD_ZERO( exset );
 
-    n = 0;
-
-    /* merge fds */
-    for( i = 0; i < nfds; i++ )
+    /* events occurred ? */
+    if( n != 0 )
     {
-        for( j = 0; j <= ST_END; j++ )
+        n = 0;
+
+        /* merge fds */
+        for( i = 0; i < nfds; i++ )
         {
-            PSELECTPARM parm = &parms[ j ];
+            for( j = 0; j <= ST_END; j++ )
+            {
+                PSELECTPARM parm = &parms[ j ];
 
-            if( rdset && FD_ISSET( i, &parm->fdset[ FDSET_READ ] ))
-                n++, FD_SET( i, rdset );
+                if( rdset && FD_ISSET( i, &parm->fdset[ FDSET_READ ] ))
+                    n++, FD_SET( i, rdset );
 
-            if( wrset && FD_ISSET( i, &parm->fdset[ FDSET_WRITE ] ))
-                n++, FD_SET( i, wrset );
+                if( wrset && FD_ISSET( i, &parm->fdset[ FDSET_WRITE ] ))
+                    n++, FD_SET( i, wrset );
 
-            if( exset && FD_ISSET( i, &parm->fdset[ FDSET_EXCEPT ] ))
-                n++, FD_SET( i, exset );
+                if( exset && FD_ISSET( i, &parm->fdset[ FDSET_EXCEPT ] ))
+                    n++, FD_SET( i, exset );
+            }
         }
     }
 
