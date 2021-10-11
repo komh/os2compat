@@ -130,7 +130,7 @@ int scandir( const char *dir, struct dirent ***namelist,
 /**
  * alphasort()
  *
- * @remakr OS/2 kLIBC requires parameters of compare function differently
+ * @remark OS/2 kLIBC requires parameters of compare function differently
  * from POSIX
  */
 int alphasort( const /* struct dirent **d1 */ void *p1,
