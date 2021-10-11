@@ -1,7 +1,7 @@
 /*
  * getaddrinfo() implementation for OS/2 kLIBC
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -10,10 +10,18 @@
  * http://www.wtfpl.net/ for more details.
  */
 
+/*
+ * Dependencies: network/socklen_t.h
+ */
+
 #ifndef OS2COMPAT_GETADDRINFO_H
 #define OS2COMPAT_GETADDRINFO_H
 
 #include <stddef.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
+#include "network/socklen_t.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,9 +91,7 @@ extern "C" {
 #define AI_NUMERICHOST 4
 #endif
 
-typedef int socklen_t;
-
-struct addrinfo
+struct os2compat_addrinfo
 {
     int ai_flags;
     int ai_family;
@@ -94,15 +100,24 @@ struct addrinfo
     size_t ai_addrlen;
     struct sockaddr *ai_addr;
     char *ai_canonname;
-    struct addrinfo *ai_next;
+    struct os2compat_addrinfo *ai_next;
 };
 
-const char *gai_strerror (int errnum);
-int getaddrinfo (const char *node, const char *service,
-                 const struct addrinfo *hints, struct addrinfo **res);
-void freeaddrinfo (struct addrinfo *res);
-int getnameinfo (const struct sockaddr *sa, socklen_t salen, char *host,
-                 int hostlen, char *serv, int servlen, int flags);
+const char *os2compat_gai_strerror( int errnum );
+int os2compat_getaddrinfo( const char *node, const char *service,
+                           const struct os2compat_addrinfo *hints,
+                           struct os2compat_addrinfo **res );
+void os2compat_freeaddrinfo( struct os2compat_addrinfo *res );
+int os2compat_getnameinfo( const struct sockaddr *sa, socklen_t salen,
+                           char *host, int hostlen,
+                           char *serv, int servlen, int flags );
+
+#define addrinfo os2compat_addrinfo
+
+#define gai_strerror    os2compat_gai_strerror
+#define getaddrinfo     os2compat_getaddrinfo
+#define freeaddrinfo    os2compat_freeaddrinfo
+#define getnameinfo     os2compat_getnameinfo
 
 #ifdef __cplusplus
 }

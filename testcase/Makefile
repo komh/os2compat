@@ -1,6 +1,6 @@
 #
 #   Configuration parts of GNU Make/GCC build system.
-#   Copyright (C) 2014 by KO Myung-Hun <komh@chollian.net>
+#   Copyright (C) 2014-2021 by KO Myung-Hun <komh@chollian.net>
 #
 #   This file is part of GNU Make/GCC build system.
 #
@@ -17,10 +17,10 @@
 SUBDIRS :=
 
 # specify gcc compiler flags for all the programs
-CFLAGS := -Wall -DOS2EMX_PLAIN_CHAR -funsigned-char
+CFLAGS := -Wall -DOS2EMX_PLAIN_CHAR -funsigned-char -I..
 
 # specify g++ compiler flags for all the programs
-CXXFLAGS := -Wall -DOS2EMX_PLAIN_CHAR -funsigned-char
+CXXFLAGS := -Wall -DOS2EMX_PLAIN_CHAR -funsigned-char -I..
 
 # specify linker flags such as -L option for all the programs
 LDFLAGS :=
@@ -147,7 +147,7 @@ _response-1_SRCS := _response-1.c ../process/_response.c
 getrusage-1_SRCS := getrusage-1.c ../process/getrusage.c
 getrusage-1_CFLAGS := -I../process
 
-select-1_SRCS := select-1.c ../network/select.c ../io/pipe.c
+select-1_SRCS := select-1.c ../network/select.c ../io/pipe.c ../io/fcntl.c
 select-1_CFLAGS := -I../network
 
 # 1. specify a list of libraries without an extension with

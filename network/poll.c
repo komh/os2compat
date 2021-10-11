@@ -1,7 +1,7 @@
 /*
  * poll() implementation for OS/2 kLIBC
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This file was excerpted and modifed from src/os2/thread.c of VLC.
  *
@@ -32,7 +32,7 @@
 
 #include "poll.h"
 
-int poll( struct pollfd *fds, unsigned nfds, int timeout )
+int os2compat_poll( struct os2compat_pollfd *fds, unsigned nfds, int timeout )
 {
     fd_set rdset, wrset, exset;
 

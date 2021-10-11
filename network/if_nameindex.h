@@ -1,7 +1,7 @@
 /*
  * if_nameindex() family implementation for OS/2 kLIBC
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -13,21 +13,28 @@
 #ifndef OS2COMPAT_IF_NAMEINDEX_H
 #define OS2COMPAT_IF_NAMEINDEX_H
 
+#include <net/if.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct if_nameindex
+struct os2compat_if_nameindex
 {
     /* Note: if_index may be different from ifmib.iftable.iftIndex */
     unsigned int if_index;
     char        *if_name;
 };
 
-struct if_nameindex *if_nameindex( void );
-void if_freenameindex( struct if_nameindex *ptr );
-char *if_indextoname( unsigned ifindex, char *ifname );
-unsigned if_nametoindex( const char *ifname );
+struct os2compat_if_nameindex *os2compat_if_nameindex( void );
+void os2compat_if_freenameindex( struct os2compat_if_nameindex *ptr );
+char *os2compat_if_indextoname( unsigned ifindex, char *ifname );
+unsigned os2compat_if_nametoindex( const char *ifname );
+
+#define if_nameindex        os2compat_if_nameindex
+#define if_freenameindex    os2compat_if_freenameindex
+#define if_indextoname      os2compat_if_indextoname
+#define if_nametoindex      os2compat_if_nametoindex
 
 #ifdef __cplusplus
 }

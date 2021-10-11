@@ -1,7 +1,7 @@
 /*
  * POSIX semaphore implementation for OS/2 kLIBC
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -86,7 +86,7 @@ static int rc2errno( ULONG rc )
  *
  * @todo Support @a pshared
  */
-int sem_init( sem_t *sem, int pshared, unsigned int value )
+int os2compat_sem_init( os2compat_sem_t *sem, int pshared, unsigned int value )
 {
     if( value > SEM_VALUE_MAX )
     {
@@ -101,7 +101,7 @@ int sem_init( sem_t *sem, int pshared, unsigned int value )
     {
         errno = ENOSPC;
 
-        sem_destroy( sem );
+        os2compat_sem_destroy( sem );
 
         return -1;
     }
@@ -114,7 +114,7 @@ int sem_init( sem_t *sem, int pshared, unsigned int value )
 /**
  * sem_destroy()
  */
-int sem_destroy( sem_t *sem )
+int os2compat_sem_destroy( os2compat_sem_t *sem )
 {
     ULONG rc;
 
@@ -132,7 +132,7 @@ int sem_destroy( sem_t *sem )
 /**
  * sem_post()
  */
-int sem_post( sem_t *sem )
+int os2compat_sem_post( os2compat_sem_t *sem )
 {
     ULONG rc = 0;
 
@@ -150,7 +150,7 @@ int sem_post( sem_t *sem )
     EPILOGUE;
 }
 
-static int sem_wait_common( sem_t *sem, ULONG ulTimeout )
+static int sem_wait_common( os2compat_sem_t *sem, ULONG ulTimeout )
 {
     ULONG rc;
 
@@ -181,7 +181,7 @@ static int sem_wait_common( sem_t *sem, ULONG ulTimeout )
 /**
  * sem_wait()
  */
-int sem_wait( sem_t *sem )
+int os2compat_sem_wait( os2compat_sem_t *sem )
 {
     return sem_wait_common( sem, SEM_INDEFINITE_WAIT );
 }
@@ -189,7 +189,7 @@ int sem_wait( sem_t *sem )
 /**
  * sem_trywait()
  */
-int sem_trywait( sem_t *sem )
+int os2compat_sem_trywait( os2compat_sem_t *sem )
 {
     return sem_wait_common( sem, SEM_IMMEDIATE_RETURN );
 }

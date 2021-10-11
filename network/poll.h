@@ -1,7 +1,7 @@
 /*
  * poll() implementation for OS/2 kLIBC
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -36,14 +36,18 @@ extern "C" {
 #define POLLNVAL    0x0020
 #endif
 
-struct pollfd
+struct os2compat_pollfd
 {
     int fd;
     unsigned events;
     unsigned revents;
 };
 
-int poll( struct pollfd *fds, unsigned nfds, int timeout );
+int os2compat_poll( struct os2compat_pollfd *fds, unsigned nfds, int timeout );
+
+#define pollfd os2compat_pollfd
+
+#define poll os2compat_poll
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 /*
  * getaddrinfo() implementation for OS/2 kLIBC
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This file was modifed from src/os2/getaddrinfo.c of VLC.
  *
@@ -75,7 +75,7 @@ static const char gai_unknownerr[] = "Unrecognized error number";
 /****************************************************************************
  * Converts an EAI_* error code into human readable english text.
  ****************************************************************************/
-const char *gai_strerror (int errnum)
+const char *os2compat_gai_strerror (int errnum)
 {
     unsigned i;
 
@@ -98,8 +98,9 @@ const char *gai_strerror (int errnum)
  * function.
  */
 int
-getnameinfo (const struct sockaddr *sa, socklen_t salen,
-             char *host, int hostlen, char *serv, int servlen, int flags)
+os2compat_getnameinfo (const struct sockaddr *sa, socklen_t salen,
+                       char *host, int hostlen,
+                       char *serv, int servlen, int flags)
 {
     if (((size_t)salen < sizeof (struct sockaddr_in))
      || (sa->sa_family != AF_INET))
@@ -171,11 +172,11 @@ gai_error_from_herrno (void)
 /*
  * This functions must be used to free the memory allocated by getaddrinfo().
  */
-void freeaddrinfo (struct addrinfo *res)
+void os2compat_freeaddrinfo (struct os2compat_addrinfo *res)
 {
     while (res != NULL)
     {
-        struct addrinfo *next = res->ai_next;
+        struct os2compat_addrinfo *next = res->ai_next;
 
         free (res->ai_canonname);
         free (res->ai_addr);
@@ -187,14 +188,14 @@ void freeaddrinfo (struct addrinfo *res)
 /*
  * Internal function that builds an addrinfo struct.
  */
-static struct addrinfo *
+static struct os2compat_addrinfo *
 makeaddrinfo (int af, int type, int proto,
               const struct sockaddr *addr, size_t addrlen,
               const char *canonname)
 {
-    struct addrinfo *res;
+    struct os2compat_addrinfo *res;
 
-    res = (struct addrinfo *)malloc (sizeof (struct addrinfo));
+    res = malloc (sizeof (*res));
     if (res != NULL)
     {
         res->ai_flags = 0;
@@ -221,11 +222,11 @@ makeaddrinfo (int af, int type, int proto,
         }
     }
     /* failsafe */
-    freeaddrinfo (res);
+    os2compat_freeaddrinfo (res);
     return NULL;
 }
 
-static struct addrinfo *
+static struct os2compat_addrinfo *
 makeipv4info (int type, int proto, u_long ip, u_short port, const char *name)
 {
     struct sockaddr_in addr;
@@ -252,10 +253,11 @@ makeipv4info (int type, int proto, u_long ip, u_short port, const char *name)
  * Only UDP and TCP over IPv4 are supported here.
  */
 int
-getaddrinfo (const char *node, const char *service,
-             const struct addrinfo *hints, struct addrinfo **res)
+os2compat_getaddrinfo (const char *node, const char *service,
+                       const struct os2compat_addrinfo *hints,
+                       struct os2compat_addrinfo **res)
 {
-    struct addrinfo *info;
+    struct os2compat_addrinfo *info;
     u_long ip;
     u_short port;
     int protocol = 0, flags = 0;

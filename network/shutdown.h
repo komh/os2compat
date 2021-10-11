@@ -1,7 +1,7 @@
 /*
  * Define macros for shutdown() for OS/2 kLIBC
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -12,6 +12,8 @@
 
 #ifndef OS2COMPAT_SHUTDOWN_H
 #define OS2COMPAT_SHUTDOWN_H
+
+#include <sys/socket.h>
 
 #ifndef SHUT_RD
 #define SHUT_RD 0

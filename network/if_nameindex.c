@@ -1,7 +1,7 @@
 /*
  * if_nameindex() family implementaiton for OS/2 kLIBC
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -22,12 +22,12 @@
 #include <net/if.h>     /* struct ifconf, struct ifreq */
 #include <net/if_dl.h>  /* struct sockaddr_dl */
 
-struct if_nameindex *if_nameindex( void )
+struct os2compat_if_nameindex *os2compat_if_nameindex( void )
 {
     int s;
     struct ifconf ifconf;
     struct ifreq iflist[ IFMIB_ENTRIES /* MAX 42 */];
-    struct if_nameindex *nis = NULL;
+    struct os2compat_if_nameindex *nis = NULL;
     int ifcount;
     int entries = 0;
     int i;
@@ -62,7 +62,7 @@ struct if_nameindex *if_nameindex( void )
             nis[ entries ].if_name = strdup( iflist[ i ].ifr_name );
             if( nis[ entries ].if_name == NULL )
             {
-                if_freenameindex( nis );
+                os2compat_if_freenameindex( nis );
 
                 nis = NULL;
 
@@ -87,7 +87,7 @@ out:
     return nis;
 }
 
-void if_freenameindex( struct if_nameindex *ptr )
+void os2compat_if_freenameindex( struct os2compat_if_nameindex *ptr )
 {
     int i;
 
@@ -100,12 +100,12 @@ void if_freenameindex( struct if_nameindex *ptr )
     free( ptr );
 }
 
-char *if_indextoname( unsigned ifindex, char *ifname )
+char *os2compat_if_indextoname( unsigned ifindex, char *ifname )
 {
-    struct if_nameindex *nis;
+    struct os2compat_if_nameindex *nis;
     int i;
 
-    nis = if_nameindex();
+    nis = os2compat_if_nameindex();
     if( nis == NULL )
         return NULL;
 
@@ -121,7 +121,7 @@ char *if_indextoname( unsigned ifindex, char *ifname )
 
     i = nis[ i ].if_index;
 
-    if_freenameindex( nis );
+    os2compat_if_freenameindex( nis );
 
     if( i == 0 )
         return NULL;
@@ -129,12 +129,12 @@ char *if_indextoname( unsigned ifindex, char *ifname )
     return ifname;
 }
 
-unsigned if_nametoindex( const char *ifname )
+unsigned os2compat_if_nametoindex( const char *ifname )
 {
-    struct if_nameindex *nis;
+    struct os2compat_if_nameindex *nis;
     int i;
 
-    nis = if_nameindex();
+    nis = os2compat_if_nameindex();
     if( nis == NULL )
         return 0;
 
@@ -146,7 +146,7 @@ unsigned if_nametoindex( const char *ifname )
 
     i = nis[ i ].if_index;
 
-    if_freenameindex( nis );
+    os2compat_if_freenameindex( nis );
 
     return i;
 }

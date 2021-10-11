@@ -1,7 +1,7 @@
 /*
  * mmap() simple implementation for OS/2 kLIBC
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -723,7 +723,8 @@ static int mmapGetSharedNameFromFd( int fd, char *name, size_t size )
  * length read may be different.
  * @todo demand paging.
  */
-void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
+void *os2compat_mmap( void *addr, size_t len, int prot, int flags, int fildes,
+                      off_t off )
 {
     os2_mmap *new_mmap;
     int pagesize;
@@ -929,17 +930,17 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
         if( readFromFile( fildes, read_off, read_buf, read_len ) == -1 )
         {
             saved_errno = errno;
-            munmap( ret, len );
+            os2compat_munmap( ret, len );
             errno = saved_errno;
 
             return MAP_FAILED;
         }
     }
 
-    if( mprotect( ret, len, prot ))
+    if( os2compat_mprotect( ret, len, prot ))
     {
         saved_errno = errno;
-        munmap( ret, len );
+        os2compat_munmap( ret, len );
         errno = saved_errno;
 
         return MAP_FAILED;
@@ -952,7 +953,7 @@ void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
  * Unmap mapped memory by mmap().
  * @remark Partial unmapping is not supported.
  */
-int munmap( void *addr, size_t len )
+int os2compat_munmap( void *addr, size_t len )
 {
     os2_mmap *mm;
 
@@ -969,7 +970,7 @@ int munmap( void *addr, size_t len )
     {
         if(( mm->flags & ( MAP_ANON | MAP_SHARED )) == MAP_SHARED
            && ( mm->prot & PROT_WRITE )
-           && msync( mm->addr, mm->len, MS_SYNC ) == -1 )
+           && os2compat_msync( mm->addr, mm->len, MS_SYNC ) == -1 )
             return -1;
 
         if( mm->flags & MAP_SHARED )
@@ -990,7 +991,7 @@ int munmap( void *addr, size_t len )
  * Set memory protection flags.
  * @bug Set READ flag if PROT_NONE. OS/2 has no equivalent attributes to it.
  */
-int mprotect( void *addr, size_t len, int prot )
+int os2compat_mprotect( void *addr, size_t len, int prot )
 {
     os2_mmap *mm;
 
@@ -1018,15 +1019,16 @@ int mprotect( void *addr, size_t len, int prot )
  * Anonymous mmap().
  * @see mmap().
  */
-void *mmap_anon( void *addr, size_t len, int prot, int flags, off_t off )
+void *os2compat_mmap_anon( void *addr, size_t len, int prot, int flags,
+                           off_t off )
 {
-    return mmap( addr, len, prot, flags | MAP_ANON, -1, off );
+    return os2compat_mmap( addr, len, prot, flags | MAP_ANON, -1, off );
 }
 
 /**
  * Synchronize memory with a file
  */
-int msync( void *addr, size_t len, int flags )
+int os2compat_msync( void *addr, size_t len, int flags )
 {
     os2_mmap *mm;
 

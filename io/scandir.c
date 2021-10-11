@@ -1,7 +1,7 @@
 /*
  * scandir() and alphasort() implementation for OS/2 kLIBC
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -23,10 +23,10 @@
  *
  * @remark OS/2 kLIBC declares scandir() differently from POSIX
  */
-int scandir( const char *dir, struct dirent ***namelist,
-             int ( *sel )(/* const */ struct dirent * ),
-             int ( *compare )( const /* struct dirent ** */ void *,
-                               const /* struct dirent ** */ void *))
+int os2compat_scandir( const char *dir, struct dirent ***namelist,
+                       int ( *sel )(/* const */ struct dirent * ),
+                       int ( *compare )( const /* struct dirent ** */ void *,
+                                         const /* struct dirent ** */ void *))
 {
     DIR *dp;
     struct dirent **list = NULL;
@@ -133,8 +133,8 @@ int scandir( const char *dir, struct dirent ***namelist,
  * @remark OS/2 kLIBC requires parameters of compare function differently
  * from POSIX
  */
-int alphasort( const /* struct dirent **d1 */ void *p1,
-               const /* struct dirent **d2 */ void *p2 )
+int os2compat_alphasort( const /* struct dirent **d1 */ void *p1,
+                         const /* struct dirent **d2 */ void *p2 )
 {
     struct dirent **d1 = ( struct dirent ** )p1;
     struct dirent **d2 = ( struct dirent ** )p2;

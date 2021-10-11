@@ -1,7 +1,7 @@
 /*
  * POSIX semaphore implementation for OS/2 kLIBC
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2021 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -27,13 +27,22 @@ typedef struct {
     unsigned long/*HMTX*/ hmtxWait;  /**< mutex for waiting  */
     unsigned long/*HMTX*/ hmtxCount; /**< mutex for counting */
     int count;                       /**< count of semaphore */
-} sem_t;
+} os2compat_sem_t;
 
-int sem_init( sem_t *sem, int pshared, unsigned int value );
-int sem_destroy( sem_t *sem );
-int sem_post( sem_t *sem );
-int sem_wait( sem_t *sem );
-int sem_trywait( sem_t *sem );
+int os2compat_sem_init( os2compat_sem_t *sem, int pshared,
+                        unsigned int value );
+int os2compat_sem_destroy( os2compat_sem_t *sem );
+int os2compat_sem_post( os2compat_sem_t *sem );
+int os2compat_sem_wait( os2compat_sem_t *sem );
+int os2compat_sem_trywait( os2compat_sem_t *sem );
+
+#define sem_t os2compat_sem_t
+
+#define sem_init        os2compat_sem_init
+#define sem_destroy     os2compat_sem_destroy
+#define sem_post        os2compat_sem_post
+#define sem_wait        os2compat_sem_wait
+#define sem_trywait     os2compat_sem_trywait
 
 #ifdef __cplusplus
 }
