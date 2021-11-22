@@ -75,8 +75,9 @@ checkCC: procedure expose G.
 
     call lineout sTestFile,, 1;
 
-    do while words(sHeaders) > 0
-        parse var sHeaders sHeader sHeaders;
+    sHeaderList = sHeaders;
+    do while words(sHeaderList) > 0
+        parse var sHeaderList sHeader sHeaderList;
         call lineout sTestFile, '#include "' || sHeader || '"';
     end;
 
