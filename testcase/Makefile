@@ -90,7 +90,8 @@ BIN_PROGRAMS := mmap-1 \
                 if_nameindex-1 \
                 _response-1 \
                 getrusage-1 \
-                select-1
+                select-1 \
+                xpoll-1
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -150,6 +151,10 @@ getrusage-1_CFLAGS := -I../process
 
 select-1_SRCS := select-1.c ../network/select.c ../io/pipe.c ../io/fcntl.c
 select-1_CFLAGS := -I../network
+
+xpoll-1_SRCS := xpoll-1.c ../network/xpoll.c ../network/poll.c \
+                ../network/select.c ../io/pipe.c ../io/fcntl.c
+xpoll-1_CFLAGS := -I../network
 
 # 1. specify a list of libraries without an extension with
 #

@@ -50,6 +50,13 @@ call checkCC 'sys/types.h sys/resource.h', 'process/getrusage.c', ,
 call checkCC 'sys/select.h', 'network/select.c', 'select( 0, 0, 0, 0, 0 );';
 call checkCC 'fcntl.h', 'io/fcntl.c', 'fcntl( 0, 0, 0 );';
 call checkCC 'io.h', 'io/pipe.c', 'pipe( 0 );';
+call checkCC 'network/xpoll.h', 'network/xpoll.c network/poll.c', ,
+             'struct xpollset *xpset;' || g.sNl ||,
+             'xpset = xpoll_create();'  || g.sNl ||,
+             'xpoll_add( xpset, 0, 0 );' || g.sNl ||,
+             'xpoll_del( xpset, 0 );' || g.sNl ||,
+             'xpoll_query( xpset, 0, 0 );' || g.sNl ||,
+             'xpoll_wait( xpset, 0, 0, 0 );';
 
 say 'Check completed';
 
