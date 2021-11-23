@@ -74,6 +74,9 @@ static int kbhit( void )
 #define ST_SOCKET   3
 #define ST_END      ST_SOCKET
 
+/* select type to bit */
+#define ST2BIT( type ) ( 1 << ( type ))
+
 /* select parameter */
 typedef struct SELECTPARM
 {
@@ -269,6 +272,7 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
     SELECTPARM parms[ ST_END + 1 ] = {{ 0, }, };
     int nowaitmode = timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0;
     struct timeval nowait = { 0, 0 };
+    int pending = 0;
     int nrpipesems = 0, nwpipesems = 0;
     PIPESEM rpipesems[ nfds ], wpipesems[ nfds ];
     HEV hevSock = NULLHANDLE;
@@ -302,19 +306,25 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
     /* check consoles */
     if(( parms[ ST_CONSOLE ].nfds[ FDSET_READ ] > 0 && kbhit()) ||
        parms[ ST_CONSOLE ].nfds[ FDSET_WRITE ] > 0 )
+    {
+        pending |= ST2BIT( ST_CONSOLE );
         timeout = &nowait;
+    }
 #endif
 
     /* check the regular files which are always ready in any state */
     if( parms[ ST_FILE ].nmaxfds > 0 )
+    {
+        pending |= ST2BIT( ST_FILE );
         timeout = &nowait;
+    }
 
     /* check pipes */
     if( parms[ ST_PIPE ].nmaxfds > 0 )
     {
         PSELECTPARM parm = &parms[ ST_PIPE ];
-        fd_set rset, *prset = &rset;
-        fd_set wset, *pwset = &wset;
+        fd_set rset;
+        fd_set wset;
 
         nrpipesems = initpipesems( parm, rpipesems, FDSET_READ );
         if( nrpipesems == -1 )
@@ -327,22 +337,14 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
         FD_ZERO( &rset );
         FD_ZERO( &wset );
 
-        if( nowaitmode )
+        if( checkpipesems( nrpipesems, rpipesems, &rset, 1 ) +
+            checkpipesems( nwpipesems, wpipesems, &wset, 1 ) > 0 )
         {
-            prset = &parm->fdset[ FDSET_READ ];
-            pwset = &parm->fdset[ FDSET_WRITE ];
-        }
+            parm->fdset[ FDSET_READ ] = rset;
+            parm->fdset[ FDSET_WRITE ] = wset;
+            /* exception is not supported */
 
-        if( checkpipesems( nrpipesems, rpipesems, prset, 1 ) +
-            checkpipesems( nwpipesems, wpipesems, pwset, 1 ) > 0 )
-        {
-            if( !nowaitmode )
-            {
-                parm->fdset[ FDSET_READ ] = *prset;
-                parm->fdset[ FDSET_WRITE ] = *pwset;
-                /* exception is not supported */
-            }
-
+            pending |= ST2BIT( ST_PIPE );
             timeout = &nowait;
         }
     }
@@ -351,9 +353,9 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
     if( parms[ ST_SOCKET ].nmaxfds > 0 )
     {
         PSELECTPARM parm = &parms[ ST_SOCKET ];
-        fd_set rset, *prset = &rset;
-        fd_set wset, *pwset = &wset;
-        fd_set eset, *peset = &eset;
+        fd_set rset;
+        fd_set wset;
+        fd_set eset;
 
         if( DosCreateEventSem( NULL, &hevSock, DC_SEM_SHARED, FALSE ))
         {
@@ -365,34 +367,38 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
         if( cancelsock == -1 )
             goto cleanup;
 
-        if( nowaitmode )
-        {
-            prset = &parm->fdset[ FDSET_READ ];
-            pwset = &parm->fdset[ FDSET_WRITE ];
-            peset = &parm->fdset[ FDSET_EXCEPT ];
-        }
-        else
-        {
-            rset = parm->fdset[ FDSET_READ ];
-            wset = parm->fdset[ FDSET_WRITE ];
-            eset = parm->fdset[ FDSET_EXCEPT ];
-        }
+        rset = parm->fdset[ FDSET_READ ];
+        wset = parm->fdset[ FDSET_WRITE ];
+        eset = parm->fdset[ FDSET_EXCEPT ];
 
-        if( _std_select( parm->nmaxfds, prset, pwset, peset, &nowait ) > 0 )
+        if( _std_select( parm->nmaxfds, &rset, &wset, &eset, &nowait ) > 0 )
         {
-            if( !nowaitmode )
-            {
-                parm->fdset[ FDSET_READ ] = rset;
-                parm->fdset[ FDSET_WRITE ] = wset;
-                parm->fdset[ FDSET_EXCEPT ] = eset;
-            }
+            parm->fdset[ FDSET_READ ] = rset;
+            parm->fdset[ FDSET_WRITE ] = wset;
+            parm->fdset[ FDSET_EXCEPT ] = eset;
 
+            pending |= ST2BIT( ST_SOCKET );
             timeout = &nowait;
         }
     }
 
-    /* no pending events ? */
-    if( timeout != &nowait )
+    /* pending events ? */
+    if( timeout == &nowait )
+    {
+        for( int i = 0; i <= ST_END; i++ )
+        {
+            /* clear not occurred events */
+            if( !( pending & ST2BIT( i )))
+            {
+                PSELECTPARM parm = &parms[ i ];
+
+                FD_ZERO( &parm->fdset[ FDSET_READ ]);
+                FD_ZERO( &parm->fdset[ FDSET_WRITE ]);
+                FD_ZERO( &parm->fdset[ FDSET_EXCEPT ]);
+            }
+        }
+    }
+    else
     {
         PSELECTPARM parm = &parms[ ST_PIPE ];
         HMUX hmux;

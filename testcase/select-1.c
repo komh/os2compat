@@ -232,7 +232,17 @@ static void mixedtest( void )
 
     fd = fileno( fp );
 
-    /* read-ready for a file test */
+    /* read-ready for a file test with waiting */
+    FD_ZERO( &rdset );
+    FD_SET( fd, &rdset );
+    FD_SET( ph[ 0 ], &rdset );
+    FD_SET( socks[ 0 ], &rdset );
+    tv.tv_sec = 0;
+    tv.tv_usec = 1000;
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
+    TEST_BOOL( FD_ISSET( fd, &rdset ), 1 );
+
+    /* read-ready for a file test without waiting */
     FD_ZERO( &rdset );
     FD_SET( fd, &rdset );
     FD_SET( ph[ 0 ], &rdset );
