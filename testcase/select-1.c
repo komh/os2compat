@@ -70,13 +70,19 @@ static void pipetest( void )
 
     /* read-ready by partial read() test */
     TEST_EQUAL( read( ph[ 0 ], buf, 3 ), 3 );
+    FD_ZERO( &rdset );
+    FD_SET( ph[ 0 ], &rdset );
     TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
 
     /* not read-ready by read() test */
     TEST_EQUAL( read( ph[ 0 ], buf, 2 ), 2 );
+    FD_ZERO( &rdset );
+    FD_SET( ph[ 0 ], &rdset );
     TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* mis-placed fdset test */
+    FD_ZERO( &rdset );
+    FD_SET( ph[ 0 ], &rdset );
     TEST_EQUAL( select( ph[ 0 ] + 1, NULL, &rdset, NULL, &tv ), -1 );
 
     /* write-ready test */
@@ -86,6 +92,8 @@ static void pipetest( void )
     TEST_BOOL( FD_ISSET( ph[ 1 ], &wrset ), 1 );
 
     /* mis-placed fdset test */
+    FD_ZERO( &wrset );
+    FD_SET( ph[ 1 ], &wrset );
     TEST_EQUAL( select( ph[ 1 ] + 1, &wrset, NULL, NULL, &tv ), -1 );
 
     /* time-limit wait test */
@@ -159,10 +167,14 @@ static void sockettest( void )
 
     /* read-ready by partial read() test */
     TEST_EQUAL( read( socks[ 0 ], buf, 3 ), 3 );
+    FD_ZERO( &rdset );
+    FD_SET( socks[ 0 ], &rdset );
     TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 1 );
 
     /* not read-ready by read() test */
     TEST_EQUAL( read( socks[ 0 ], buf, 2 ), 2 );
+    FD_ZERO( &rdset );
+    FD_SET( socks[ 0 ], &rdset );
     TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, &tv ), 0 );
 
     /* write-ready test */
