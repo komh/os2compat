@@ -13,6 +13,8 @@
 #ifndef OS2COMPAT_TESTCASE_TEST_H
 #define OS2COMPAT_TESTCASE_TEST_H
 
+#include <stdlib.h>
+
 #define TEST_EQUAL( expr, expectd )                                         \
     do {                                                                    \
         int TEST_expr = ( expr );                                           \
@@ -20,9 +22,11 @@
         if( TEST_expr == TEST_expected )                                    \
             fprintf( stderr, "PASSED: %d: %s = %d\n",                       \
                      __LINE__,  #expr, TEST_expr );                         \
-        else                                                                \
+        else {                                                              \
             fprintf( stderr, "FAILED: %d: %s = %d, Expected = %d\n",        \
                      __LINE__, #expr, TEST_expr, TEST_expected );           \
+            abort();                                                        \
+        }                                                                   \
    } while( 0 )
 
 #define TEST_BOOL( expr, expectd )                                          \
@@ -32,9 +36,11 @@
         if( TEST_expr == TEST_expected )                                    \
             fprintf( stderr, "PASSED: %d: %s = %d\n",                       \
                      __LINE__,  #expr, TEST_expr );                         \
-        else                                                                \
+        else {                                                              \
             fprintf( stderr, "FAILED: %d: %s = %d, Expected = %d\n",        \
                      __LINE__, #expr, TEST_expr, TEST_expected );           \
+            abort();                                                        \
+        }                                                                   \
    } while( 0 )
 
 #endif
