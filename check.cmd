@@ -58,6 +58,8 @@ call checkCC 'network/xpoll.h', 'network/xpoll.c network/poll.c', ,
              'xpoll_query( xpset, 0, 0 );' || g.sNl ||,
              'xpoll_wait( xpset, 0, 0, 0 );';
 
+call checkOS2CompatHeader;
+
 say 'Check completed';
 
 exit 0;
@@ -113,5 +115,35 @@ checkCC: procedure expose G.
     end;
 
     say 'Check passed';
+
+    return;
+
+checkOS2CompatHeader: procedure expose G.
+    sHeaderFiles = 'include/os2compat/dirent.h',
+                   'include/os2compat/netdb.h',
+                   'include/os2compat/poll.h',
+                   'include/os2compat/semaphore.h',
+                   'include/os2compat/net/if.h',
+                   'include/os2compat/sys/mman.h',
+                   'include/os2compat/sys/socket.h',
+                   'include/os2compat/sys/xpoll.h';
+    sPrivHeaderFiles = 'io/scandir.h',
+                       'memory/mmap.h',
+                       'network/cmsg.h',
+                       'network/getaddrinfo.h',
+                       'network/if_nameindex.h',
+                       'network/poll.h',
+                       'network/shutdown.h',
+                       'network/socklen_t.h',
+                       'network/xpoll.h',
+                       'thread/semaphore.h';
+    sDestDir = 'include/os2compat/priv';
+
+    address cmd 'ginstall -d' sDestDir;
+    address cmd 'cp -p --parent' sPrivHeaderFiles sDestDir;
+
+    call checkCC sHeaderFiles;
+
+    address cmd 'rm -rf' sDestDir;
 
     return;
