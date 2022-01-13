@@ -251,19 +251,27 @@ typedef struct WAITSOCKSARGS
     PSELECTPARM parm;
     struct timeval *timeout;
     HEV hev;
+    int err;
 } WAITSOCKSARGS, *PWAITSOCKSARGS;
 
 static void waitsocks( void *arg )
 {
-    WAITSOCKSARGS wsa = *( PWAITSOCKSARGS )arg;
+    PWAITSOCKSARGS wsa = arg;
     int n;
 
-    n = _std_select( wsa.parm->nmaxfds, &wsa.parm->fdset[ FDSET_READ ],
-                     &wsa.parm->fdset[ FDSET_WRITE ],
-                     &wsa.parm->fdset[ FDSET_EXCEPT ], wsa.timeout );
+    n = _std_select( wsa->parm->nmaxfds,
+                     &wsa->parm->fdset[ FDSET_READ ],
+                     &wsa->parm->fdset[ FDSET_WRITE ],
+                     &wsa->parm->fdset[ FDSET_EXCEPT ],
+                     wsa->timeout );
 
-    if( n > 0 )
-        DosPostEventSem( wsa.hev );
+    if( n != 0 )
+    {
+        if( n == -1 )
+            wsa->err = errno;
+
+        DosPostEventSem( wsa->hev );
+    }
 }
 
 int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
@@ -403,6 +411,7 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
         PSELECTPARM parm = &parms[ ST_PIPE ];
         HMUX hmux;
         SEMRECORD sr;
+        WAITSOCKSARGS wsa;
         TID tidSock = -1;
         ULONG ulTimeout;
         ULONG ulUser;
@@ -449,7 +458,6 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
         if( hevSock != NULLHANDLE )
         {
             PSELECTPARM parmsock = &parms[ ST_SOCKET ];
-            WAITSOCKSARGS wsa;
 
             sr.hsemCur = ( HSEM )hevSock;
             sr.ulUser = ( ULONG )hevSock;
@@ -469,6 +477,7 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
             wsa.parm = parmsock;
             wsa.timeout = timeout;
             wsa.hev = hevSock;
+            wsa.err = 0;
 
             /* no pipes ? */
             if( nrpipesems == 0 && nwpipesems == 0 )
@@ -508,11 +517,6 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
                 break;
 
             case 0:
-                checkpipesems( nrpipesems, rpipesems,
-                               &parm->fdset[ FDSET_READ ], 0 );
-                checkpipesems( nwpipesems, wpipesems,
-                               &parm->fdset[ FDSET_WRITE ], 0 );
-
                 if( hevSock != NULLHANDLE )
                 {
                     if( DosWaitEventSem( hevSock, SEM_IMMEDIATE_RETURN ) != 0 )
@@ -527,10 +531,21 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
                         /* unblock on select() */
                         so_cancel( cancelsock );
                     }
+                    else if( wsa.err != 0 )
+                        err = wsa.err;
 #if 0
                     DosWaitThread( &tidSock, DCWW_WAIT );
 #endif
                 }
+
+                if( err == 0 )
+                {
+                    checkpipesems( nrpipesems, rpipesems,
+                                   &parm->fdset[ FDSET_READ ], 0 );
+                    checkpipesems( nwpipesems, wpipesems,
+                                   &parm->fdset[ FDSET_WRITE ], 0 );
+                }
+
                 break;
 
             default:
