@@ -121,7 +121,7 @@ mmap-7_CFLAGS := -I../memory
 mmap-8_SRCS   := mmap-8.c ../memory/mmap.c
 mmap-8_CFLAGS := -I../memory
 
-spawnvpe-1_SRCS   := spawnvpe-1.c ../process/spawnvpe.c
+spawnvpe-1_SRCS   := spawnvpe-1.c ../process/spawn.c
 spawnvpe-1_CFLAGS := -I../process
 
 spawnvpe-1-child_SRCS    := spawnvpe-1-child.c

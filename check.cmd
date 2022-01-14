@@ -27,7 +27,7 @@ call checkCC 'memory/mmap.h', 'memory/mmap.c', ,
              'mprotect( 0, 0, 0);' || g.sNl ||,
              'munmap( 0, 0 );' || g.sNl ||,
              'mmap_anon( 0, 0, 0, 0, 0);';
-call checkCC 'process.h', 'process/spawnvpe.c', 'spawnvpe( 0, 0, 0, 0 );';
+call checkCC 'process.h', 'process/spawn.c', 'spawnvpe( 0, 0, 0, 0 );';
 call checkCC 'stdio.h', 'io/freopen.c', 'freopen( 0, 0, 0 );';
 call checkCC 'io.h fcntl.h', 'io/setmode.c', 'setmode( 0, 0 );';
 call checkCC 'thread/semaphore.h', 'thread/semaphore.c', ,

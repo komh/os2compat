@@ -1,7 +1,7 @@
 /*
- * spawnvpe() to support a very long command line for OS/2 kLIBC
+ * spawn*() to support a very long command line for OS/2 kLIBC
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2022 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <io.h>
 #include <process.h>
 #include <errno.h>
@@ -25,7 +26,7 @@ struct rsp_temp
 
 static struct rsp_temp *rsp_temp_start = NULL;
 
-static void spawnvpe_add_rsp_temp( int pid, const char *name )
+static void spawn_add_rsp_temp( int pid, const char *name )
 {
     struct rsp_temp *rsp_temp_new;
 
@@ -37,7 +38,7 @@ static void spawnvpe_add_rsp_temp( int pid, const char *name )
     rsp_temp_start = rsp_temp_new;
 }
 
-static void spawnvpe_remove_rsp_temp( int pid )
+static void spawn_remove_rsp_temp( int pid )
 {
     struct rsp_temp *rsp_temp;
     struct rsp_temp *rsp_temp_prev = NULL;
@@ -67,17 +68,17 @@ static void spawnvpe_remove_rsp_temp( int pid )
 }
 
 __attribute__((destructor))
-static void spawnvpe_cleanup( void )
+static void spawn_cleanup( void )
 {
-    spawnvpe_remove_rsp_temp( -1 );
+    spawn_remove_rsp_temp( -1 );
 }
 
 /* alias */
-int _std_spawnvpe( int mode, const char *name, char * const argv[],
-                   char * const envp[]);
+int _std_spawnve( int mode, const char *name, char * const argv[],
+                  char * const envp[]);
 
-int spawnvpe( int mode, const char *name, char * const argv[],
-              char * const envp[])
+int spawnve( int mode, const char *name, char * const argv[],
+             char * const envp[])
 {
     char *rsp_argv[ 3 ];
     char  rsp_name_arg[] = "@spawnvpe-rsp-XXXXXX";
@@ -86,7 +87,7 @@ int spawnvpe( int mode, const char *name, char * const argv[],
     int   rc;
     int   saved_errno;
 
-    rc = _std_spawnvpe( mode, name, argv, envp );
+    rc = _std_spawnve( mode, name, argv, envp );
     saved_errno = errno;
 
     /* arguments too long? */
@@ -115,13 +116,13 @@ int spawnvpe( int mode, const char *name, char * const argv[],
         rsp_argv[ 1 ] = rsp_name_arg;
         rsp_argv[ 2 ] = NULL;
 
-        rc = _std_spawnvpe( mode, name, rsp_argv, envp );
+        rc = _std_spawnve( mode, name, rsp_argv, envp );
         saved_errno = errno;
 
         /* make a response file list to clean up later if spawned a child
          * successfully except P_WAIT */
         if( rc >= 0 && ( mode & 0xFF ) != P_WAIT )
-            spawnvpe_add_rsp_temp( rc, rsp_name );
+            spawn_add_rsp_temp( rc, rsp_name );
         else                        /* failed or P_WAIT ? */
             remove( rsp_name );     /* remove immediately */
     }
@@ -129,4 +130,70 @@ int spawnvpe( int mode, const char *name, char * const argv[],
     errno = saved_errno;
 
     return rc;
+}
+
+int spawnv( int mode, const char *name, char * const argv[])
+{
+    return spawnve( mode, name, argv, NULL );
+}
+
+int spawnvp( int mode, const char *name, char * const argv[])
+{
+
+    return spawnvpe( mode, name, argv, NULL );
+}
+
+int spawnvpe( int mode, const char *name, char * const argv[],
+              char * const envp[])
+{
+    char path[ _MAX_PATH ];
+
+    if( _path2( name, ".exe", path, sizeof( path )) == 0)
+        return spawnve( mode, path, argv, envp );
+
+    return -1;
+}
+
+int spawnl( int mode, const char *name, const char *arg0, ... )
+{
+    /* as OS/2 kLIBC does */
+    return spawnv( mode, name,  ( char * const * )&arg0 );
+}
+
+int spawnle( int mode, const char *name, const char *arg0, ... )
+{
+    /* as OS/2 kLIBC does */
+    va_list argp;
+    char * const *envp;
+
+    va_start( argp, arg0 );
+    while( va_arg( argp, const char * ) != NULL )
+        /* nothing */;
+
+    envp = va_arg( argp, char * const * );
+    va_end( argp );
+
+    return spawnve( mode, name, ( char * const * )&arg0, envp );
+}
+
+int spawnlp( int mode, const char *name, const char *arg0, ... )
+{
+    /* as OS/2 kLIBC does */
+    return spawnvp( mode, name,  ( char * const * )&arg0 );
+}
+
+int spawnlpe( int mode, const char *name, const char *arg0, ... )
+{
+    /* as OS/2 kLIBC does */
+    va_list argp;
+    char * const *envp;
+
+    va_start( argp, arg0 );
+    while( va_arg( argp, const char * ) != NULL )
+        /* nothing */;
+
+    envp = va_arg( argp, char * const * );
+    va_end( argp );
+
+    return spawnvpe( mode, name, ( char * const * )&arg0, envp );
 }
