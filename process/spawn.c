@@ -67,6 +67,20 @@ static void spawn_remove_rsp_temp( int pid )
     }
 }
 
+__attribute__((constructor))
+static void spawn_startup( void )
+{
+    /*
+     * Workaround the bug of kLIBC v0.6.6 which is to fail to execute the
+     * program when a directory with the same name in the current directory.
+     * For example, some commands such as `git push' fails if a directory named
+     * `git' in the current directory.
+     * This has effects on codes using _path2() such as spawnvpe().
+     */
+     if (!getenv("EMXPATH"))
+        putenv("EMXPATH=");
+}
+
 __attribute__((destructor))
 static void spawn_cleanup( void )
 {
