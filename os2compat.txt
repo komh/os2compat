@@ -1,0 +1,25 @@
+                          Upload Information Template for Hobbes.nmsu.edu
+                          ===============================================
+
+        Archive Filename: os2compat-@VER@.zip
+       Short Description: os2compat v@VER@
+        Long Description: os2compat v@VER@
+Supplementary library for missing features in OS/2 kLIBC.
+
+      Proposed directory
+           for placement: /pub/os2/dev/unix
+
+               Your name: KO Myung-Hun
+           Email address: komh@chollian.net
+    Program contact name: (same)
+   Program contact email: (same)
+             Program URL: https://github.com/komh/os2compat
+
+      Would you like the
+   contact email address
+    included in listings? yes
+
+Operating System/Version:
+ Additional requirements: kLIBC v0.6.6
+
+                Replaces: (none)
