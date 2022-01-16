@@ -91,7 +91,8 @@ BIN_PROGRAMS := mmap-1 \
                 _response-1 \
                 getrusage-1 \
                 select-1 \
-                xpoll-1
+                xpoll-1 \
+                execvpe-1
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -155,6 +156,9 @@ select-1_CFLAGS := -I../network
 xpoll-1_SRCS := xpoll-1.c ../network/xpoll.c ../network/poll.c \
                 ../network/select.c ../io/pipe.c ../io/fcntl.c
 xpoll-1_CFLAGS := -I../network
+
+execvpe-1_SRCS   := execvpe-1.c ../process/exec.c ../process/spawn.c
+execvpe-1_CFLAGS := -I../process
 
 # 1. specify a list of libraries without an extension with
 #

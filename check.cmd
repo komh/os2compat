@@ -57,6 +57,7 @@ call checkCC 'network/xpoll.h', 'network/xpoll.c network/poll.c', ,
              'xpoll_del( xpset, 0 );' || g.sNl ||,
              'xpoll_query( xpset, 0, 0 );' || g.sNl ||,
              'xpoll_wait( xpset, 0, 0, 0 );';
+call checkCC 'process.h', 'process/exec.c', 'execvpe( 0, 0, 0 );';
 
 call checkOS2CompatHeader;
 
