@@ -10,6 +10,9 @@
  * http://www.wtfpl.net/ for more details.
  */
 
+#define INCL_DOS
+#include <os2.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -67,6 +70,13 @@ static void spawn_remove_rsp_temp( int pid )
     }
 }
 
+static VOID APIENTRY spawn_cleanup( VOID )
+{
+    spawn_remove_rsp_temp( -1 );
+
+    DosExitList( EXLST_EXIT, NULL );
+}
+
 __attribute__((constructor))
 static void spawn_startup( void )
 {
@@ -79,12 +89,9 @@ static void spawn_startup( void )
      */
      if (!getenv("EMXPATH"))
         putenv("EMXPATH=");
-}
 
-__attribute__((destructor))
-static void spawn_cleanup( void )
-{
-    spawn_remove_rsp_temp( -1 );
+    /* add spawn_cleanup() to a exit list to clean response files up later */
+     DosExitList( EXLST_ADD | 0x00007A00, ( PFNEXITLIST )spawn_cleanup );
 }
 
 /* alias */
@@ -125,6 +132,11 @@ int spawnve( int mode, const char *name, char * const argv[],
         }
 
         close( fd );
+
+        /* add a response file to a list before spawning a child because
+         * spawning with P_OVERLAY does not return */
+        if(( mode & 0xFF ) == P_OVERLAY )
+            spawn_add_rsp_temp( 0, rsp_name );
 
         rsp_argv[ 0 ] = argv[ 0 ];
         rsp_argv[ 1 ] = rsp_name_arg;
