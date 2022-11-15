@@ -102,7 +102,7 @@ int spawnve( int mode, const char *name, char * const argv[],
              char * const envp[])
 {
     char *rsp_argv[ 3 ];
-    char  rsp_name_arg[] = "@spawnvpe-rsp-XXXXXX";
+    char  rsp_name_arg[] = "@spawn-rsp-XXXXXX";
     char *rsp_name = &rsp_name_arg[ 1 ];
     int   i;
     int   rc;
