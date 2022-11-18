@@ -54,6 +54,9 @@ void _response (int *argcp, char ***argvp)
           filesize = ftell(f);
           fseek(f, 0, SEEK_SET);
 
+          if (filesize == 0)
+            continue;
+
           line = malloc(filesize+1+1); /* 1 for type, 1 for NUL */
           if (!line)
             goto out_of_memory;
