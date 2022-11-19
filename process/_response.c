@@ -1,10 +1,79 @@
 /* response.c (emx+gcc) -- Copyright (c) 1990-1996 by Eberhard Mattes
-                        -- Copyright (c) 2016 by KO Myung-Hun         */
+                        -- Copyright (c) 2016-2022 by KO Myung-Hun         */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <klibc/startup.h>
+
+/* This should be same as one in spawn.c */
+#define RSP_ENV_FILE_KEY    "@__KLIBC_ENV_RESPONSE__@"
+
+/**
+ * Read environment strings from a response file without a size limitation
+ *
+ * @remark After calling this function, do not use \a envp of main(). Use
+ *         environ instead.
+ */
+static void response_env( void )
+{
+    const char *env = environ[ 0 ];
+    int key_len;
+    FILE *f;
+    long filesize;
+    char *line, *p;
+
+    key_len = strlen( RSP_ENV_FILE_KEY );
+
+    /* RSP_ENV_FILE_KEY should be the first environmental varaible. */
+    if( strncmp( env, RSP_ENV_FILE_KEY, key_len ) != 0
+        || env[ key_len ] != '='
+        || env[ key_len + 1 ] != '@'
+        || ( f = fopen( env + key_len + 2, "rt")) == NULL)
+        return;                     /* do nothing */
+
+    fseek( f, 0, SEEK_END );
+    filesize = ftell( f );
+    fseek( f, 0, SEEK_SET );
+
+    if( filesize == 0 )
+        return;
+
+    line = malloc( filesize + 1 ); /* 1 for NUL */
+    if( !line )
+        goto out_of_memory;
+
+    while( fgets( line, filesize + 1, f ) != NULL )
+    {
+        p = strchr( line, '\n');
+        if( p != NULL )
+            *p = 0;
+        p = strdup( line );
+        if( p == NULL )
+            goto out_of_memory;
+
+        putenv( p );
+    }
+
+    free( line );
+
+    if( ferror( f ))
+    {
+        fputs("Cannot read response file for environment\n", stderr );
+        exit( 255 );
+    }
+
+    fclose( f );
+
+    /* remove RSP_ENV_FILE_KEY from environment variables */
+    putenv( RSP_ENV_FILE_KEY );
+
+    return;
+
+out_of_memory:
+    fputs("Out of memory while reading response file for environment\n", stderr );
+    exit( 255 );
+}
 
 #define RPUT(x) do \
   { \
@@ -19,11 +88,9 @@
   } while (0)
 
 /**
- * Replacement of _response() of kLIBC
- *
- * Read a response file without a line length limitation.
+ * Read arguments from a response file without a size limitation
  */
-void _response (int *argcp, char ***argvp)
+static void response_arg (int *argcp, char ***argvp)
 {
   int i, old_argc, new_argc, new_alloc;
   char **old_argv, **new_argv;
@@ -74,7 +141,7 @@ void _response (int *argcp, char ***argvp)
           free (line);
           if (ferror (f))
             {
-              fputs ("Cannot read response file\n", stderr);
+              fputs ("Cannot read response file for arguments\n", stderr);
               exit (255);
             }
           fclose (f);
@@ -85,6 +152,21 @@ void _response (int *argcp, char ***argvp)
   return;
 
 out_of_memory:
-  fputs ("Out of memory while reading response file\n", stderr);
+  fputs ("Out of memory while reading response file for arguments\n", stderr);
   exit (255);
+}
+
+/**
+ * Replacement of _response() of kLIBC
+ *
+ * Support to read arguments and environment strings from a response file
+ * without a size limitation.
+ *
+ * @remark After calling this function, do not use \a envp of main(). Use
+ *         environ instead.
+ */
+void _response( int *argcp, char ***argvp )
+{
+    response_env();
+    response_arg( argcp, argvp );
 }

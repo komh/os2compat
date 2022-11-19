@@ -82,6 +82,8 @@ BIN_PROGRAMS := mmap-1 \
                 mmap-8 \
                 spawnvpe-1 \
                 spawnvpe-1-child \
+                spawnvpe-2 \
+                spawnvpe-2-child \
                 freopen-1 \
                 setmode-1 \
                 poll-1 \
@@ -89,6 +91,7 @@ BIN_PROGRAMS := mmap-1 \
                 scandir-1 \
                 if_nameindex-1 \
                 _response-1 \
+                _response-2 \
                 getrusage-1 \
                 select-1 \
                 xpoll-1 \
@@ -128,6 +131,13 @@ spawnvpe-1_CFLAGS := -I../process
 spawnvpe-1-child_SRCS    := spawnvpe-1-child.c
 spawnvpe-1-child_LDFLAGS := -Zargs-resp
 
+spawnvpe-2_SRCS   := spawnvpe-2.c ../process/spawn.c
+spawnvpe-2_CFLAGS := -I../process
+
+spawnvpe-2-child_SRCS    := spawnvpe-2-child.c ../process/_response.c
+spawnvpe-2-child_CFLAGS  := -I../process
+spawnvpe-2-child_LDFLAGS := -Zargs-resp
+
 freopen-1_SRCS := freopen-1.c ../io/freopen.c
 
 setmode-1_SRCS := setmode-1.c ../io/setmode.c
@@ -146,6 +156,8 @@ if_nameindex-1_SRCS := if_nameindex-1.c ../network/if_nameindex.c
 if_nameindex-1_CFLAGS := -I../network
 
 _response-1_SRCS := _response-1.c ../process/_response.c
+
+_response-2_SRCS := _response-2.c ../process/_response.c
 
 getrusage-1_SRCS := getrusage-1.c ../process/getrusage.c
 getrusage-1_CFLAGS := -I../process

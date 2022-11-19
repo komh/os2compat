@@ -1,5 +1,6 @@
 /*
- * spawn*() to support a very long command line for OS/2 kLIBC
+ * spawn*() to support very large arguments and/or environment strings
+ * for OS/2 kLIBC
  *
  * Copyright (C) 2014-2022 KO Myung-Hun <komh@chollian.net>
  *
@@ -19,6 +20,11 @@
 #include <io.h>
 #include <process.h>
 #include <errno.h>
+
+#include <sys/builtin.h>
+
+/* This should be same as one in _response.c */
+#define RSP_ENV_FILE_KEY    "@__KLIBC_ENV_RESPONSE__@"
 
 struct rsp_temp
 {
@@ -61,9 +67,6 @@ static void spawn_remove_rsp_temp( int pid )
             remove( rsp_temp->name );
             free( rsp_temp->name );
             free( rsp_temp );
-
-            if( pid != -1 )
-                break;
         }
 
         rsp_temp_prev = rsp_temp;
@@ -98,59 +101,175 @@ static void spawn_startup( void )
 int _std_spawnve( int mode, const char *name, char * const argv[],
                   char * const envp[]);
 
+/*
+ * On OS/2, a total size of arguments is supported up to 32KiB. This applies
+ * to environment strings, too. For the safety, however, use a few lesser
+ * value than 32KiB.
+ */
+#define ARG_SIZE_MAX    ( 32 * 1024 - 128 )
+#define ENV_SIZE_MAX    ( 32 * 1024 - 128 )
+
 int spawnve( int mode, const char *name, char * const argv[],
              char * const envp[])
 {
-    char *rsp_argv[ 3 ];
-    char  rsp_name_arg[] = "@spawn-rsp-XXXXXX";
-    char *rsp_name = &rsp_name_arg[ 1 ];
-    int   i;
-    int   rc;
-    int   saved_errno;
+    static unsigned pass_direct_first = 2;
+    static unsigned pass_env_response = 2;
 
-    rc = _std_spawnve( mode, name, argv, envp );
-    saved_errno = errno;
+    int rc;
+    int saved_errno;
 
-    /* arguments too long? */
-    if( rc == -1 && errno == EINVAL )
+    if( __atomic_cmpxchg32( &pass_direct_first, 2, 2 ) == 1 )
+    {
+        /* no problem even if re-entrant */
+
+        __atomic_xchg( &pass_direct_first,
+                       !getenv("OS2COMPAT_SPAWN_SKIP_PASS_DIRECT"));
+    }
+
+    if( pass_direct_first )
+    {
+        /* FIXME: passing envp to _std_spawnve() directly may cause
+         * _std_spawnve() to crash if total size of environment strings is
+         * about 64KiB */
+        rc = _std_spawnve( mode, name, argv, envp );
+        saved_errno = errno;
+    }
+
+    /* use a response file? or arguments and/or environment strings too big? */
+    if( !pass_direct_first || ( rc == -1 && errno == EINVAL ))
     {
         /* use a response file */
+        char *rsp_argv[ 3 ];
+        char  rsp_name_arg[] = "@spawn-arg-rsp-XXXXXX";
+        char *rsp_name = &rsp_name_arg[ 1 ];
+
+        char *rsp_envp[ 2 ];
+        char  rsp_name_env_str[] = RSP_ENV_FILE_KEY "=@spawn-env-rsp-XXXXXX";
+        char *rsp_name_env = NULL;
+
         int fd;
 
-        if(( fd = mkstemp( rsp_name )) == -1 )
-        {
-            errno = saved_errno;
+        int arg_big = 0, env_big = 0;
+        int n;
 
-            return -1;
+        char * const *p;
+
+        /* check size of arguments */
+        n = 1;      /* an additional byte for zero at end */
+        for( p = argv; *p; p++ )
+            n += strlen( *p ) + 1;
+
+        arg_big = n > ARG_SIZE_MAX;
+
+        if( arg_big )
+        {
+            /* create a response file for arguments */
+            if(( fd = mkstemp( rsp_name )) == -1 )
+                return -1;
+
+            /* write all the arguments except a 0th program name */
+            for( p = argv + 1; *p; p++ )
+            {
+                write( fd, *p, strlen( *p ));
+                write( fd, "\n", 1 );
+            }
+
+            close( fd );
+
+            rsp_argv[ 0 ] = argv[ 0 ];
+            rsp_argv[ 1 ] = rsp_name_arg;
+            rsp_argv[ 2 ] = NULL;
+
+            argv = rsp_argv;
         }
 
-        /* write all the arguments except a 0th program name */
-        for( i = 1; argv[ i ]; i++ )
+        if( __atomic_cmpxchg32( &pass_env_response, 2, 2 ) == 1 )
         {
-            write( fd, argv[ i ], strlen( argv[ i ]));
-            write( fd, "\n", 1 );
+            /* no problem even if re-entrant */
+
+            __atomic_xchg( &pass_env_response,
+                           !!getenv("OS2COMPAT_SPAWN_PASS_ENV_RESPONSE"));
         }
 
-        close( fd );
+        if( pass_env_response )
+        {
+            char * const *e = envp ? envp : environ;
+
+            /* check size of environment strings before passing it to
+             * _std_spawnve() because normal kLIBC programs do not understand
+             * a response file for environment strings */
+
+            n = 1;      /* an additional byte for zero at end */
+            for( p = e; *p; p++ )
+                n += strlen( *p ) + 1;
+
+            env_big = n > ENV_SIZE_MAX;
+
+            if( env_big )
+            {
+                /* create a response file for environment strings */
+                rsp_name_env = strrchr( rsp_name_env_str, '@') + 1;
+
+                if(( fd = mkstemp( rsp_name_env )) == -1 )
+                {
+                    saved_errno = errno;
+
+                    if( arg_big )
+                        remove( rsp_name );
+
+                    errno = saved_errno;
+
+                    return -1;
+                }
+
+                /* write all the environment strings */
+                for( p = e; *p; p++ )
+                {
+                    write( fd, *p, strlen( *p ));
+                    write( fd, "\n", 1 );
+                }
+
+                close( fd );
+
+                rsp_envp[ 0 ] = rsp_name_env_str;
+                rsp_envp[ 1 ] = NULL;
+
+                envp = rsp_envp;
+            }
+        }
 
         /* add a response file to a list before spawning a child because
          * spawning with P_OVERLAY does not return */
         if(( mode & 0xFF ) == P_OVERLAY )
-            spawn_add_rsp_temp( 0, rsp_name );
+        {
+            if( arg_big )
+                spawn_add_rsp_temp( 0, rsp_name );
 
-        rsp_argv[ 0 ] = argv[ 0 ];
-        rsp_argv[ 1 ] = rsp_name_arg;
-        rsp_argv[ 2 ] = NULL;
+            if( pass_env_response && env_big )
+                spawn_add_rsp_temp( 0, rsp_name_env );
+        }
 
-        rc = _std_spawnve( mode, name, rsp_argv, envp );
+        rc = _std_spawnve( mode, name, argv, envp );
         saved_errno = errno;
 
         /* make a response file list to clean up later if spawned a child
          * successfully except P_WAIT */
         if( rc >= 0 && ( mode & 0xFF ) != P_WAIT )
-            spawn_add_rsp_temp( rc, rsp_name );
+        {
+            if( arg_big )
+                spawn_add_rsp_temp( rc, rsp_name );
+
+            if( pass_env_response && env_big )
+                spawn_add_rsp_temp( rc, rsp_name_env );
+        }
         else                        /* failed or P_WAIT ? */
-            remove( rsp_name );     /* remove immediately */
+        {                           /* remove immediately */
+            if( arg_big )
+                remove( rsp_name );
+
+            if( pass_env_response && env_big )
+                remove( rsp_name_env );
+        }
     }
 
     errno = saved_errno;
