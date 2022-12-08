@@ -14,11 +14,15 @@
  * Dependecies: network/poll.c
  */
 
+#define INCL_DOS
+#include <os2.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
 #include <sys/select.h>
+#include <sys/stat.h>
 
 #include "xpoll.h"
 
@@ -95,22 +99,28 @@ int os2compat_xpoll_destroy( struct os2compat_xpollset *xpset )
  */
 static int check_fd( int fd )
 {
-    struct pollfd pfd;
+    struct stat st;
+    ULONG ulState;
 
-    pfd.fd = fd;
-    pfd.events = POLLIN;
-    pfd.revents = 0;
+    /* accept negative fd, but do nothing for it like poll() */
+    if( fd < 0 )
+        return 0;
 
-    if( poll( &pfd, 1, 0 ) == -1 )
+    if( fstat( fd, &st ) == -1 )
         return -1;
 
-    if( pfd.revents & POLLNVAL )
-    {
-        errno = EINVAL;
-        return -1;
-    }
+    /* files or sockets */
+    if( S_ISREG( st.st_mode ) || S_ISSOCK( st.st_mode ))
+        return 0;
 
-    return 0;
+    /* named pipes */
+    if( DosQueryNPHState( fd, &ulState ) == 0 )
+        return 0;
+
+    /* not supported handles */
+    errno = EINVAL;
+
+    return -1;
 }
 
 int os2compat_xpoll_add( struct os2compat_xpollset *xpset,
