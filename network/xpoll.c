@@ -146,13 +146,13 @@ int os2compat_xpoll_add( struct os2compat_xpollset *xpset,
         /* Insert empty slot. */
         memmove( &xpset->fds[ pos + 1 ], &xpset->fds[ pos ],
                  ( xpset->nfds - pos ) * sizeof( xpset->fds[ 0 ]));
+
+        xpset->nfds++;
     }
 
     xpset->fds[ pos ].fd = fd;
     xpset->fds[ pos ].events = event;
     xpset->fds[ pos ].revents = 0;
-
-    xpset->nfds++;
 
     return 0;
 }
