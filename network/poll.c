@@ -45,6 +45,7 @@ static int checkfd( int fd )
     ULONG ulState;
     int optval, optlen = sizeof( optval );
 
+    /* invalid handle */
     if( fstat( fd, &st ) == -1 )
         return -1;
 

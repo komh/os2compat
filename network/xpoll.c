@@ -109,6 +109,7 @@ static int check_fd( int fd )
     if( fd < 0 )
         return 0;
 
+    /* invalid handle */
     if( fstat( fd, &st ) == -1 )
         return -1;
 
