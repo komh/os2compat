@@ -126,7 +126,7 @@ int os2compat_poll( struct os2compat_pollfd *fds, unsigned nfds, int timeout )
             ptv = &tv;
         }
 
-        if (select( val + 1, &rdset, &wrset, &exset, ptv ) == -1)
+        if( select( val + 1, &rdset, &wrset, &exset, ptv ) == -1 )
             return -1;
     }
 
