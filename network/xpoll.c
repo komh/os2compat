@@ -37,8 +37,8 @@ struct os2compat_xpollset
  *
  * @param xpset A xpollset instance
  * @param[in] fd A file descriptor to search
- * @returns Positive or zero index of @fd if found
- * @returns Negative index if not found. -Index - 1 means the index where @fd
+ * @returns Positive or zero index of @a fd if found
+ * @returns Negative index if not found. -Index - 1 means the index where @a fd
             should be placed.
  */
 static int binsearch( struct os2compat_xpollset *xpset, int fd )
