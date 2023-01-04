@@ -59,7 +59,7 @@ static int checkfd( int fd )
         return 0;
 
     /* named pipes */
-    if( DosQueryNPHState( fd, &ulState ) == 0 )
+    if( S_ISFIFO( st.st_mode ) && DosQueryNPHState( fd, &ulState ) == 0 )
         return 0;
 
     /* not supported handles */
