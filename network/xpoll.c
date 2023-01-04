@@ -23,6 +23,7 @@
 
 #include <sys/select.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 
 #include "xpoll.h"
 
@@ -101,6 +102,8 @@ static int check_fd( int fd )
 {
     struct stat st;
     ULONG ulState;
+    int optval;
+    int optlen = sizeof( optval );
 
     /* accept negative fd, but do nothing for it like poll() */
     if( fd < 0 )
@@ -109,8 +112,13 @@ static int check_fd( int fd )
     if( fstat( fd, &st ) == -1 )
         return -1;
 
-    /* files or sockets */
-    if( S_ISREG( st.st_mode ) || S_ISSOCK( st.st_mode ))
+    /* files */
+    if( S_ISREG( st.st_mode ))
+        return 0;
+
+    /* sockets */
+    if( S_ISSOCK( st.st_mode ) &&
+        getsockopt( fd, SOL_SOCKET, SO_TYPE, &optval, &optlen ) == 0 )
         return 0;
 
     /* named pipes */

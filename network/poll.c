@@ -43,12 +43,18 @@ static int checkfd( int fd )
 {
     struct stat st;
     ULONG ulState;
+    int optval, optlen = sizeof( optval );
 
     if( fstat( fd, &st ) == -1 )
         return -1;
 
-    /* files or sockets */
-    if( S_ISREG( st.st_mode ) || S_ISSOCK( st.st_mode ))
+    /* files */
+    if( S_ISREG( st.st_mode ))
+        return 0;
+
+    /* sockets */
+    if( S_ISSOCK( st.st_mode ) &&
+        getsockopt( fd, SOL_SOCKET, SO_TYPE, &optval, &optlen ) == 0 )
         return 0;
 
     /* named pipes */

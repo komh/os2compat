@@ -97,6 +97,7 @@ static int setfd( int fd, PSELECTPARM parms, int op )
     ULONG ulType, ulAttr;
 #endif
     ULONG ulState;
+    int optval, optlen = sizeof( optval );
     int type;
 
     if( fstat( fd, &st ) == -1 )
@@ -118,7 +119,8 @@ static int setfd( int fd, PSELECTPARM parms, int op )
              (( op == FDSET_READ && ( ulState & NP_END_SERVER )) ||
               ( op == FDSET_WRITE && !( ulState & NP_END_SERVER ))))
         type = ST_PIPE;
-    else if( S_ISSOCK( st.st_mode ))
+    else if( S_ISSOCK( st.st_mode) &&
+             getsockopt( fd, SOL_SOCKET, SO_TYPE, &optval, &optlen ) == 0 )
         type = ST_SOCKET;
     else
         return errno = EINVAL, -1;
