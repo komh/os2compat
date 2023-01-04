@@ -187,6 +187,19 @@ int os2compat_xpoll_del( struct os2compat_xpollset *xpset, int fd )
     return 0;
 }
 
+int os2compat_xpoll_del_closed( struct os2compat_xpollset *xpset )
+{
+    int i;
+
+    for( i = xpset->nfds - 1; i >= 0; i-- )
+    {
+        if( check_fd( xpset->fds[ i ].fd ) == -1 )
+            os2compat_xpoll_del( xpset, xpset->fds[i].fd );
+    }
+
+    return 0;
+}
+
 int os2compat_xpoll_query( struct os2compat_xpollset *xpset,
                            int fd, struct pollfd *pfd )
 {

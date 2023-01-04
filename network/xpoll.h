@@ -59,6 +59,14 @@ int os2compat_xpoll_add( struct os2compat_xpollset *xpset,
 int os2compat_xpoll_del( struct os2compat_xpollset *xpset, int fd );
 
 /**
+ * Delete closed fds after added by xpoll_add() but not deleted by xpoll_del()
+ *
+ * @param xpset A xpollset instance
+ * @return 0 on success, -1 on error with setting errno
+ */
+int os2compat_xpoll_del_closed( struct os2compat_xpollset *xpset );
+
+/**
  * Query a fd in a xpollset instance
  *
  * @param xpset A xpollset instance
@@ -88,6 +96,7 @@ int os2compat_xpoll_wait( struct os2compat_xpollset *xpset,
 #define xpoll_destroy   os2compat_xpoll_destroy
 #define xpoll_add       os2compat_xpoll_add
 #define xpoll_del       os2compat_xpoll_del
+#define xpoll_del_closed os2compat_xpoll_del_closed
 #define xpoll_query     os2compat_xpoll_query
 #define xpoll_wait      os2compat_xpoll_wait
 
