@@ -43,9 +43,14 @@ struct os2compat_pollfd
     unsigned revents;
 };
 
-int os2compat_poll( struct os2compat_pollfd *fds, unsigned nfds, int timeout );
+typedef unsigned os2compat_nfds_t;
+
+int os2compat_poll( struct os2compat_pollfd *fds, os2compat_nfds_t nfds,
+                    int timeout );
 
 #define pollfd os2compat_pollfd
+
+#define nfds_t os2compat_nfds_t
 
 #define poll os2compat_poll
 
