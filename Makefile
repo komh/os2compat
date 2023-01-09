@@ -175,6 +175,7 @@ HEADER_FILES := include/os2compat/dirent.h \
                 include/os2compat/netdb.h \
                 include/os2compat/poll.h \
                 include/os2compat/semaphore.h \
+                include/os2compat/sched.h \
                 include/os2compat/net/if.h \
                 include/os2compat/sys/mman.h \
                 include/os2compat/sys/socket.h \
@@ -189,7 +190,8 @@ PRIV_HEADER_FILES := io/scandir.h \
                      network/shutdown.h \
                      network/socklen_t.h \
                      network/xpoll.h \
-                     thread/semaphore.h
+                     thread/semaphore.h \
+                     thread/sched_yield.h
 
 install_headers: $(HEADER_FILES) $(PRIV_HEADER_FILES )
 	for h in $(subst include/,,$(HEADER_FILES)); do \

@@ -58,6 +58,8 @@ call checkCC 'network/xpoll.h', 'network/xpoll.c network/poll.c', ,
              'xpoll_query( xpset, 0, 0 );' || g.sNl ||,
              'xpoll_wait( xpset, 0, 0, 0 );';
 call checkCC 'process.h', 'process/exec.c', 'execvpe( 0, 0, 0 );';
+call checkCC 'thread/sched_yield.h', 'thread/sched_yield.c', ,
+             'sched_yield();';
 
 call checkOS2CompatHeader;
 
@@ -124,6 +126,7 @@ checkOS2CompatHeader: procedure expose G.
                    'include/os2compat/netdb.h',
                    'include/os2compat/poll.h',
                    'include/os2compat/semaphore.h',
+                   'include/os2compat/sched.h',
                    'include/os2compat/net/if.h',
                    'include/os2compat/sys/mman.h',
                    'include/os2compat/sys/socket.h',
@@ -137,7 +140,8 @@ checkOS2CompatHeader: procedure expose G.
                        'network/shutdown.h',
                        'network/socklen_t.h',
                        'network/xpoll.h',
-                       'thread/semaphore.h';
+                       'thread/semaphore.h',
+                       'thread/sched_yield.h';
     sDestDir = 'include/os2compat/priv';
 
     address cmd 'ginstall -d' sDestDir;
