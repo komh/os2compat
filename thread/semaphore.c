@@ -143,6 +143,8 @@ int os2compat_sem_post( os2compat_sem_t *sem )
         sem->count++;
 
         rc = DosPostEventSem(sem->hev);
+        if( rc == ERROR_TOO_MANY_POSTS || rc == ERROR_ALREADY_POSTED )
+            rc = NO_ERROR;
     }
 
     DosReleaseMutexSem(sem->hmtxCount);
