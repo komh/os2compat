@@ -22,7 +22,7 @@
 
 /* spawn*() of kLIBC will crash if ENVC * ENVLEN is about 64KiB */
 #define ENVC    16
-#define ENVLEN  ( 5 * 1024 )
+#define ENVLEN  ( 4 * 1024 )
 
 int main( void )
 {
@@ -46,9 +46,6 @@ int main( void )
         memset( envp[ i ] + 2, '0' + i, ENVLEN - 2 );
     }
     envp[ ENVC ] = NULL;
-
-    /* use a response file for environment strigns */
-    putenv("OS2COMPAT_SPAWN_PASS_ENV_RESPONSE=1");
 
     rc = spawnvpe( P_WAIT, CHILD, argv, envp );
 

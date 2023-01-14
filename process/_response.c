@@ -17,7 +17,7 @@
  */
 static void response_env( void )
 {
-    const char *env = environ[ 0 ];
+    char **env;
     int key_len;
     FILE *f;
     long filesize;
@@ -25,11 +25,15 @@ static void response_env( void )
 
     key_len = strlen( RSP_ENV_FILE_KEY );
 
-    /* RSP_ENV_FILE_KEY should be the first environmental varaible. */
-    if( strncmp( env, RSP_ENV_FILE_KEY, key_len ) != 0
-        || env[ key_len ] != '='
-        || env[ key_len + 1 ] != '@'
-        || ( f = fopen( env + key_len + 2, "rt")) == NULL)
+    /* RSP_ENV_FILE_KEY should be the last environmental varaible. */
+    for( env = environ; *env && *( env + 1 ); env++ )
+        /* nothing */;
+
+    if( !*env   /* environment is empty */
+        || strncmp( *env, RSP_ENV_FILE_KEY, key_len ) != 0
+        || ( *env )[ key_len ] != '='
+        || ( *env )[ key_len + 1 ] != '@'
+        || ( f = fopen( *env + key_len + 2, "rt")) == NULL)
         return;                     /* do nothing */
 
     fseek( f, 0, SEEK_END );
