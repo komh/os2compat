@@ -95,7 +95,8 @@ BIN_PROGRAMS := mmap-1 \
                 getrusage-1 \
                 select-1 \
                 xpoll-1 \
-                execvpe-1
+                execvpe-1 \
+                ttyname-1
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -171,6 +172,8 @@ xpoll-1_CFLAGS := -I../network
 
 execvpe-1_SRCS   := execvpe-1.c ../process/exec.c ../process/spawn.c
 execvpe-1_CFLAGS := -I../process
+
+ttyname-1_SRCS := ttyname-1.c ../io/ttyname.c
 
 # 1. specify a list of libraries without an extension with
 #

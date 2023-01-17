@@ -60,6 +60,7 @@ call checkCC 'network/xpoll.h', 'network/xpoll.c network/poll.c', ,
 call checkCC 'process.h', 'process/exec.c', 'execvpe( 0, 0, 0 );';
 call checkCC 'thread/sched_yield.h', 'thread/sched_yield.c', ,
              'sched_yield();';
+call checkCC 'unistd.h', 'io/ttyname.c', 'ttyname( 0 );';
 
 call checkOS2CompatHeader;
 
