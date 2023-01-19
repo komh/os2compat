@@ -61,6 +61,10 @@ call checkCC 'process.h', 'process/exec.c', 'execvpe( 0, 0, 0 );';
 call checkCC 'thread/sched_yield.h', 'thread/sched_yield.c', ,
              'sched_yield();';
 call checkCC 'unistd.h', 'io/ttyname.c', 'ttyname( 0 );';
+call checkCC 'network/getifaddrs.h', 'network/getifaddrs.c', ,
+             'struct ifaddrs *ifa;' || g.sNl ||,
+             'getifaddrs( &ifa );' || g.sNl ||,
+             'freeifaddrs( ifa );';
 
 call checkOS2CompatHeader;
 
@@ -124,6 +128,7 @@ checkCC: procedure expose G.
 
 checkOS2CompatHeader: procedure expose G.
     sHeaderFiles = 'include/os2compat/dirent.h',
+                   'include/os2compat/ifaddrs.h',
                    'include/os2compat/netdb.h',
                    'include/os2compat/poll.h',
                    'include/os2compat/semaphore.h',
@@ -136,6 +141,7 @@ checkOS2CompatHeader: procedure expose G.
                        'memory/mmap.h',
                        'network/cmsg.h',
                        'network/getaddrinfo.h',
+                       'network/getifaddrs.h',
                        'network/if_nameindex.h',
                        'network/poll.h',
                        'network/shutdown.h',

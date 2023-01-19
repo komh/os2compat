@@ -172,6 +172,7 @@ install_libs: $(LIB_FILES)
 	$(INSTALL) $(LIB_FILES) $(DESTDIR)$(LIBDIR)
 
 HEADER_FILES := include/os2compat/dirent.h \
+                include/os2compat/ifaddrs.h \
                 include/os2compat/netdb.h \
                 include/os2compat/poll.h \
                 include/os2compat/semaphore.h \
@@ -185,6 +186,7 @@ PRIV_HEADER_FILES := io/scandir.h \
                      memory/mmap.h \
                      network/cmsg.h \
                      network/getaddrinfo.h \
+                     network/getifaddrs.h \
                      network/if_nameindex.h \
                      network/poll.h \
                      network/shutdown.h \
