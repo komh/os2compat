@@ -138,7 +138,6 @@ spawnvpe-2_SRCS   := spawnvpe-2.c ../process/spawn.c
 spawnvpe-2_CFLAGS := -I../process
 
 spawnvpe-2-child_SRCS    := spawnvpe-2-child.c ../process/_response.c
-spawnvpe-2-child_CFLAGS  := -I../process
 spawnvpe-2-child_LDFLAGS := -Zargs-resp
 
 freopen-1_SRCS := freopen-1.c ../io/freopen.c
