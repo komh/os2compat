@@ -120,6 +120,8 @@ int _std_spawnve( int mode, const char *name, char * const argv[],
 int spawnve( int mode, const char *name, char * const argv[],
              char * const envp[])
 {
+    static int skip_libc = -1;
+
     int rc;
     int saved_errno;
 
@@ -138,6 +140,18 @@ int spawnve( int mode, const char *name, char * const argv[],
     int n;
 
     char * const *p;
+
+    if( skip_libc == -1 )
+        skip_libc = getenv("OS2COMPAT_SPAWN_SKIP_LIBC") != NULL;
+
+    if( !skip_libc )
+    {
+        rc = _std_spawnve( mode, name, argv, envp );
+        if( rc != -1 ||
+            !( errno == EINVAL /* Old too big errno */ ||
+               errno == E2BIG  /* New too big errno */))
+            return rc;
+    }
 
     /* check size of arguments */
     n = 1;      /* an additional byte for zero at end */
