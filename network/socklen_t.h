@@ -1,7 +1,7 @@
 /*
  * Define socklen_t for OS/2 kLIBC
  *
- * Copyright (C) 2014-2021 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -15,9 +15,9 @@
 
 #include <sys/socket.h>
 
-#ifndef __socklen_t_defined
+#ifndef _SOCKLEN_T_DECLARED
 typedef int socklen_t;
-#define __socklen_t_defined
+#define _SOCKLEN_T_DECLARED
 #endif
 
 #endif
