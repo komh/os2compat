@@ -525,19 +525,18 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
                     {
                         PSELECTPARM parmsock = &parms[ ST_SOCKET ];
 
+                        /* unblock on select() */
+                        so_cancel( cancelsock );
+
                         /* clear events */
                         FD_ZERO( &parmsock->fdset[ FDSET_READ ]);
                         FD_ZERO( &parmsock->fdset[ FDSET_WRITE ]);
                         FD_ZERO( &parmsock->fdset[ FDSET_EXCEPT ]);
-
-                        /* unblock on select() */
-                        so_cancel( cancelsock );
                     }
                     else if( wsa.err != 0 )
                         err = wsa.err;
-#if 0
+
                     DosWaitThread( &tidSock, DCWW_WAIT );
-#endif
                 }
 
                 if( err == 0 )
