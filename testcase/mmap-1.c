@@ -1,7 +1,7 @@
 /*
  * mmap() test program
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -15,6 +15,8 @@
 #include <string.h>
 #include <io.h>
 #include <fcntl.h>
+
+#include "test.h"
 
 #include "mmap.h"
 
@@ -31,6 +33,8 @@ int main( void )
     char *contents_mmap;
     int len;
     int rc = 0;
+
+    printf("Testing mmap( PROT_READ, MAP_PRIVATE )...\n");
 
     fd = open( name, O_WRONLY | O_CREAT | O_BINARY, S_IREAD | S_IWRITE );
 
@@ -72,13 +76,12 @@ int main( void )
     printf("%s", contents_mmap );
     printf("-----\n");
 
-    if( memcmp( contents_read, contents_mmap, len ))
-        printf("FAILED: Contents are different from each other\n");
-    else
-        printf("PASSED: Contents are identical each other\n");
+    TEST_EQUAL( memcmp( contents_read, contents_mmap, len ), 0 );
 
     free( contents_read );
     munmap( contents_mmap, len );
+
+    printf("All tests PASSED\n");
 
 exit:
     close( fd );

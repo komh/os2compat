@@ -1,7 +1,7 @@
 /*
  * xpoll() test program
  *
- * Copyright (C) 2021 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2021-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -27,7 +27,6 @@ int xpoll_test( const char *msg, struct xpollset *xpset,
     struct timeval tv2;
     int i;
     int rc;
-    int passed = 1;
 
     printf("%s\n", msg );
 
@@ -44,19 +43,14 @@ int xpoll_test( const char *msg, struct xpollset *xpset,
 
     for( i = 0; i < rc; i++ )
     {
-        printf("fd = %d, events = %x, revents = %x(%x)\n",
-               fds[ i ].fd, fds[ i ].events, fds[ i ].revents, res[ i + 1]);
+        printf("fd = %d, events = %x\n", fds[ i ].fd, fds[ i ].events );
 
-        passed = passed && fds[ i ].revents == res[ i + 1];
+        TEST_EQUAL( fds[ i ].revents, res[ i + 1]);
     }
-
-    passed = passed && rc == res[ 0 ];
-
-    printf("%s\n", passed ? "PASSED" : "FAILED");
 
     printf("\n");
 
-    return passed;
+    return 0;
 }
 
 #define INVALID_HANDLE  100
@@ -69,7 +63,8 @@ int main( void )
     int sv[ 2 ];
     struct pollfd fds[ 4 ];
     int res[ 5 ];
-    int passed = 1;
+
+    printf("Testing xpoll()...\n");
 
     TEST_BOOL( xpset = xpoll_create(), 1 );
 
@@ -89,10 +84,8 @@ int main( void )
     res[ 2 ] = 0;
     res[ 3 ] = 0;
     res[ 4 ] = 0;
-    passed = passed &&
-             xpoll_test("Negative, regular, not-read-ready-socket, "
-                        "1000 timeout.",
-                        xpset, fds, 4, 1000, res);
+    xpoll_test("Negative, regular, not-read-ready-socket, 1000 timeout.",
+               xpset, fds, 4, 1000, res);
 
     TEST_EQUAL( xpoll_del( xpset, NEGATIVE_HANDLE ), 0 );
     TEST_EQUAL( xpoll_del( xpset, fd ), 0 );
@@ -102,9 +95,8 @@ int main( void )
     res[ 2 ] = 0;
     res[ 3 ] = 0;
     res[ 4 ] = 0;
-    passed = passed &&
-             xpoll_test("Not-read-ready-socket only, 1000 timeout.",
-                        xpset, fds, 4, 1000, res );
+    xpoll_test("Not-read-ready-socket only, 1000 timeout.",
+               xpset, fds, 4, 1000, res );
 
     write( sv[ 1 ], "\0", 1 );
 
@@ -116,9 +108,8 @@ int main( void )
     res[ 2 ] = POLLIN;
     res[ 3 ] = 0;
     res[ 4 ] = 0;
-    passed = passed &&
-             xpoll_test("Negative, regular, read-ready-socket, 1000 timeout.",
-                        xpset, fds, 4, 1000, res );
+    xpoll_test("Negative, regular, read-ready-socket, 1000 timeout.",
+               xpset, fds, 4, 1000, res );
 
     TEST_EQUAL( xpoll_del( xpset, NEGATIVE_HANDLE ), 0 );
     TEST_EQUAL( xpoll_del( xpset, fd ), 0 );
@@ -128,15 +119,14 @@ int main( void )
     res[ 2 ] = 0;
     res[ 3 ] = 0;
     res[ 4 ] = 0;
-    passed = passed &&
-             xpoll_test("Read-ready-socket only, 1000 timeout.",
-                        xpset, fds, 4, 1000, res );
+    xpoll_test("Read-ready-socket only, 1000 timeout.",
+               xpset, fds, 4, 1000, res );
 
     close( fd );
     close( sv[ 0 ]);
     close( sv[ 1 ]);
 
-    printf("%s\n", passed ? "All test PASSED" : "Some tests FAILED");
+    printf("All tests PASSED\n");
 
     return 0;
 }

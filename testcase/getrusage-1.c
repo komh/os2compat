@@ -14,33 +14,39 @@
 #include <sys/resource.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+
+#include "test.h"
+
+#define SLEEP_MS    100
+
+#define TV2US( tv ) (( tv ).tv_sec * 1000000 + ( tv ).tv_usec )
 
 int main( void )
 {
     struct rusage sru;
     struct rusage eru;
-    int i, j, k = 0;
 
-    getrusage( RUSAGE_SELF, &sru );
+    printf("Testing getrusage( RUSAGE_SELF )...\n");
+
+    TEST_EQUAL( getrusage( RUSAGE_SELF, &sru ), 0 );
 
     /* Consume times */
-    for (i = 0; i < 10000; i++)
-    {
-        for (j = 0; j < 10000; j++)
-        {
-            k += 10000;
-        }
-    }
+    _sleep2( SLEEP_MS );
 
-    getrusage( RUSAGE_SELF, &eru );
+    TEST_EQUAL( getrusage( RUSAGE_SELF, &eru ), 0 );
 
-    printf("User time: from %ld.%lds to %ld.%lds\n",
-           sru.ru_utime.tv_sec, sru.ru_utime.tv_usec / 1000,
-           eru.ru_utime.tv_sec, eru.ru_utime.tv_usec / 1000 );
+    TEST_BOOL_MSG( TV2US( eru.ru_utime ) - TV2US( sru.ru_utime ) >=
+                   SLEEP_MS * 1000, 1, "User time");
 
-    printf("System time: from %ld.%lds to %ld.%lds\n",
-           sru.ru_stime.tv_sec, sru.ru_stime.tv_usec / 1000,
-           eru.ru_stime.tv_sec, eru.ru_stime.tv_usec / 1000 );
+    if( sru.ru_stime.tv_sec == 0 && sru.ru_stime.tv_usec == 0
+        && eru.ru_stime.tv_sec == 0 && eru.ru_stime.tv_usec == 0 )
+        printf("System time not implemented yet\n");
+    else
+        TEST_BOOL_MSG( TV2US( eru.ru_stime ) - TV2US( sru.ru_stime ) > 0, 1,
+                       "System time");
+
+    printf("All tests PASSED\n");
 
     return 0;
 }

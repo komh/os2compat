@@ -1,7 +1,7 @@
 /*
  * mmap( MAP_PRIVATE ) and fork() test program
  *
- * Copyright (C) 2017 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2017-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -14,7 +14,14 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include "test.h"
+
 #include "mmap.h"
+
+#define P1  10
+#define P2  20
+#define P3  30
+#define P4  40
 
 #define EXIT(c) do { rc = (c); goto exit_munmap; } while( 0 )
 
@@ -29,6 +36,8 @@ int main( void )
     const char *me;
 
     int rc = 0;
+
+    printf("Testing mmap( MAP_PRIVATE ) and fork()...\n");
 
     p1 = mmap( NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1,
                0 );
@@ -87,11 +96,11 @@ int main( void )
         EXIT( 1 );
     }
 
-    *p1 = 10;
-    printf("ALL: Set *p1 to %d\n", *p1 );
+    *p1 = P1;
+    *p2 = P2;
 
-    *p2 = 20;
-    printf("ALL: Set *p2 to %d\n", *p2 );
+    printf("ALL: *p1 = %d, *p2 = %d, *p3 = %d, *p4 = %d\n",
+           *p1, *p2, *p3, *p4 );
 
     pid = fork();
     switch( pid )
@@ -104,26 +113,32 @@ int main( void )
 
         case 0 :
             me = "CHILD ";
-            *p1 = 30;
-            printf("%s: Set *p1 to %d\n", me, *p1 );
-            *p3 = *p1;
-
-            *p2 = 40;
-            printf("%s: Set *p2 to %d\n", me, *p2 );
-            *p4 = *p2;
-
+            *p3 = *p1 = P3;
+            *p4 = *p2 = P4;
+            printf("%s: Set *p1 = %d, *p2 = %d, *p3 = %d, *p4 = %d\n",
+                   me, *p1, *p2, *p3, *p4 );
             break;
 
         default :
-            waitpid( pid, NULL, 0 );
+        {
+            int status;
+
             me = "PARENT";
-            printf("%s: *p1 = %d, *p2 = %d, *p3 = %d, *p4 = %d\n",
-                   me, *p1, *p2, *p3, *p4 );
-            if( *p1 == *p3 || *p2 == *p4 )
-                printf("FAILED.\n");
-            else
-                printf("PASSED.\n");
+
+            if( waitpid( pid, &status, 0 ) != pid
+                && !WIFEXITED( status ) && WEXITSTATUS( status ) != 0 )
+            {
+                fprintf( stderr, "%s : waitpid( pid ) failed!!!\n", me );
+
+                EXIT( 1 );
+            }
+
+            TEST_EQUAL_MSG( *p1, P1, me );
+            TEST_EQUAL_MSG( *p2, P2, me );
+            TEST_EQUAL_MSG( *p3, P3, me );
+            TEST_EQUAL_MSG( *p4, P4, me );
             break;
+        }
     }
 
 exit_munmap:
@@ -155,6 +170,9 @@ exit_munmap:
 
         rc = 1;
     }
+
+    if( rc == 0 && pid != 0 )
+        printf("All tests PASSED\n");
 
     return rc;
 }

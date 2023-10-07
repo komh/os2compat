@@ -35,6 +35,8 @@
 /* For "errno". */
 #include <errno.h>
 
+#include "test.h"
+
 /* IPv6 stuffs missing in OS/2 kLIBC*/
 #define INET6_ADDRSTRLEN    46
 
@@ -232,15 +234,12 @@ print_ifaddrs (struct ifaddrs * ifaddrs_ptr)
 int main ()
 {
     struct ifaddrs * ifaddrs_ptr;
-    int status;
-    status = getifaddrs (& ifaddrs_ptr);
-    if (status == -1) {
-	fprintf (stderr, "Error in 'getifaddrs': %d (%s)\n",
-		 errno, strerror (errno));
-	exit (1);
-    }
+    printf("Testing getifaddrs()...\n");
+    TEST_NE(getifaddrs (& ifaddrs_ptr), -1 );
+    printf("\n");
     print_ifaddrs (ifaddrs_ptr);
     /* Free the memory associated with "ifaddrs_ptr". */
     freeifaddrs (ifaddrs_ptr);
+    printf("All tests PASSED\n");
     return 0;
 }

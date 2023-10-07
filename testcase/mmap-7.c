@@ -1,7 +1,7 @@
 /*
  * mmap( MAP_FIXED | MAP_PRIVATE ) at MAP_SHARED test program
  *
- * Copyright (C) 2017 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2017-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -30,6 +30,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "test.h"
+
 #include "mmap.h"
 
 #define TESTFILE "mmap-7.test"
@@ -41,6 +43,8 @@ int main(void)
     void *private_0 = NULL;
     struct stat st;
     int ret = 1;
+
+    printf("Testing mmap( MAP_FIXED | MAP_PRIVATE ) at MAP_SHARED...\n");
 
     if(( fd = open( TESTFILE, O_CREAT | O_RDWR, S_IREAD | S_IWRITE )) < 0 )
     {
@@ -87,13 +91,7 @@ int main(void)
         goto cleanup;
     }
 
-
-    if( shared_0 != private_0 )
-    {
-        fprintf(stderr, "Error: mmap() didn't map to the same region");
-
-        goto cleanup;
-    }
+    TEST_EQUAL_MSG( shared_0, private_0, "Same region");
 
     printf("shared_0: %p == private_0: %p\n", shared_0, private_0 );
     printf("shared_1: %p\n", shared_1);
@@ -131,9 +129,11 @@ cleanup:
     remove(TESTFILE);
 
     if( ret )
-        printf("Not implemented yet.\n");
+        printf("Copy on writing not implemented yet\n");
     else
-        printf("PASSED.\n");
+        TEST_BOOL( ret, 0 );
+
+    printf("All tests PASSED\n");
 
     return ret;
 }

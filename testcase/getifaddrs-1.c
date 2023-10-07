@@ -21,6 +21,8 @@
 #include <net/if.h>
 #include <net/if_dl.h>
 
+#include "test.h"
+
 #define INET_NTOA( sa ) inet_ntoa(((( struct sockaddr_in * )( sa ))->\
                                      sin_addr ))
 
@@ -29,11 +31,10 @@ int main( void )
     struct ifaddrs *ifaddr;
     int family;
 
-    if( getifaddrs( &ifaddr ) == -1 )
-    {
-        perror("getifaddrs");
-        return 1;
-    }
+    printf("Testing getifaddrs()...\n");
+
+    TEST_NE( getifaddrs( &ifaddr ), -1 );
+    printf("\n");
 
     /* Walk through linked list, maintaining head pointer so we
        can free list later. */
@@ -87,6 +88,8 @@ int main( void )
     }
 
     freeifaddrs( ifaddr );
+
+    printf("All tests PASSED\n");
 
     return 0;
 }

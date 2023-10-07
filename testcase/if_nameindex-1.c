@@ -1,7 +1,7 @@
 /*
  * if_nameindex() family test program
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -11,8 +11,11 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include <net/if.h>
+
+#include "test.h"
 
 #include "if_nameindex.h"
 
@@ -26,24 +29,24 @@ int main( void )
 
     if( nis )
     {
-        printf("----- List of interfaces -----\n");
         for( i = 0; nis[ i ].if_index != 0; i++ )
+        {
             printf("Index %d = [%s]\n", nis[ i ].if_index, nis[ i ].if_name );
+            TEST_EQUAL( if_nametoindex( nis[ i ].if_name ),
+                        nis[ i ].if_index );
+            TEST_EQUAL( strcmp( if_indextoname( nis[ i ].if_index, ifname ),
+                                nis[ i ].if_name ), 0 );
 
-        printf("----- End of list -----\n");
+            printf("\n");
+        }
+
         if_freenameindex( nis );
 
     }
     else
         perror("if_nameindex()");
 
-    i = if_nametoindex("lan0");
-    printf("Index of lan0 = %d\n", i );
-    printf("name of index %d = [%s]\n", i, if_indextoname( i, ifname ));
-
-    i = if_nametoindex("lo");
-    printf("Index of lo = %d\n", i );
-    printf("name of index %d = [%s]\n", i, if_indextoname( i, ifname ));
+    printf("All tests PASSED\n");
 
     return 0;
 }

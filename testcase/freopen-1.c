@@ -1,7 +1,7 @@
 /*
  * freopen() test program
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -16,6 +16,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "test.h"
+
 int main( void )
 {
     const char *name_list[] = {"freopen-1.c", "stdin", "stdout", "stderr",
@@ -24,8 +26,6 @@ int main( void )
     const char *mode_list[] = {"rb", "rb", "wb", "wb", NULL };
     const char *name;
     int flags;
-    int errors;
-    int failed;
     FILE *fp;
     FILE *fpr;
     int i;
@@ -36,30 +36,31 @@ int main( void )
     fp_list[ 3 ] = stderr;
     fp_list[ 4 ] = NULL;
 
-    errors = 0;
     for( i = 0; fp_list[ i ]; i++ )
     {
         name = name_list[ i ];
         fp = fp_list[ i ];
 
-        fpr = freopen( NULL, mode_list[ i ], fp );
+        printf("Testing freopen(%s)...\n", name );
 
-        failed = ( fpr && errno ) || ( !fpr && !errno );
-        if( failed )
-            errors++;
+        fpr = freopen( NULL, mode_list[ i ], fp );
 
         flags = fcntl( fileno( fp ), F_GETFL ) & O_BINARY;
 
+        /* restore the default file mode */
         if( !strcmp( mode_list[ i ], "wb"))
             freopen( NULL, "wt", fp );
 
-        printf("%s: name = [%s], freopen() = %p(%p), errno = %d(%d), flags = %s(%s)\n",
-               failed ? "FAILED" : "PASSED", name, fpr, fp, errno, 0,
-               flags == O_BINARY ? "O_BINARY" : "O_TEXT", "O_BINARY");
+        TEST_BOOL(( fpr && errno ) || ( !fpr && !errno ), 0 );
+        TEST_EQUAL( flags & O_BINARY, O_BINARY );
+
+        printf("\n");
     }
 
     if( fp_list[ 0 ])
         fclose( fp_list[ 0 ]);
 
-    return !!errors;
+    printf("All tests PASSED\n");
+
+    return 0;
 }

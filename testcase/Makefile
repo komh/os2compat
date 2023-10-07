@@ -73,7 +73,6 @@ RCFLAGS :=
 
 BIN_PROGRAMS := mmap-1 \
                 mmap-2 \
-                mmap-2-child \
                 mmap-3 \
                 mmap-4 \
                 mmap-5 \
@@ -81,9 +80,7 @@ BIN_PROGRAMS := mmap-1 \
                 mmap-7 \
                 mmap-8 \
                 spawnvpe-1 \
-                spawnvpe-1-child \
                 spawnvpe-2 \
-                spawnvpe-2-child \
                 freopen-1 \
                 setmode-1 \
                 poll-1 \
@@ -105,9 +102,6 @@ mmap-1_CFLAGS := -I../memory
 
 mmap-2_SRCS   := mmap-2.c ../memory/mmap.c
 mmap-2_CFLAGS := -I../memory
-
-mmap-2-child_SRCS   := mmap-2-child.c ../memory/mmap.c
-mmap-2-child_CFLAGS := -I../memory
 
 mmap-3_SRCS   := mmap-3.c ../memory/mmap.c
 mmap-3_CFLAGS := -I../memory
@@ -131,14 +125,8 @@ mmap-8_CFLAGS := -I../memory
 spawnvpe-1_SRCS   := spawnvpe-1.c ../process/spawn.c
 spawnvpe-1_CFLAGS := -I../process
 
-spawnvpe-1-child_SRCS    := spawnvpe-1-child.c
-spawnvpe-1-child_LDFLAGS := -Zargs-resp
-
-spawnvpe-2_SRCS   := spawnvpe-2.c ../process/spawn.c
+spawnvpe-2_SRCS   := spawnvpe-2.c ../process/spawn.c ../process/_response.c
 spawnvpe-2_CFLAGS := -I../process
-
-spawnvpe-2-child_SRCS    := spawnvpe-2-child.c ../process/_response.c
-spawnvpe-2-child_LDFLAGS := -Zargs-resp
 
 freopen-1_SRCS := freopen-1.c ../io/freopen.c
 

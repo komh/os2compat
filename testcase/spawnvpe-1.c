@@ -1,7 +1,7 @@
 /*
  * spawnvpe() test program
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -15,32 +15,56 @@
 #include <string.h>
 #include <process.h>
 
-#define CHILD "spawnvpe-1-child.exe"
+#include "test.h"
+
+#define CHILD_MAGIC "SPAWN-CHILD"
 
 #define ARGC    16
 #define ARGLEN  ( 4 * 1024 )
 
-int main( void )
+static int child( int argc, char *argv[])
 {
-    char *argv[ ARGC + 1 + 1 ] = { CHILD, };
+    int arglen;
+    int i;
+
+    arglen = 0;
+    for( i = 2; i < argc; i++ )
+        arglen += strlen( argv[ i ]);
+
+    TEST_EQUAL_MSG( arglen, ARGC * ARGLEN, "CHILD");
+
+    return 0;
+}
+
+int main( int argc, char *argv[])
+{
+    char *args[ ARGC + 1/* argv[ 0 ] */ + 1/* CHILD_MAGIC */ + 1/* NULL */ ] =
+        { argv[ 0 ], CHILD_MAGIC, };
     int i;
     int rc;
 
-    for( i = 1; i <= ARGC; i++ )
+    _response( &argc, &argv );
+
+    if( argc > 1 && !strcmp( argv[ 1 ], CHILD_MAGIC ))
+        return child( argc, argv );
+
+    printf("Testing spawnvpe() for a very long command line...\n");
+
+    for( i = 0; i < ARGC; i++ )
     {
-        argv[ i ] = calloc( 1, ARGLEN + 1 );
-        memset( argv[ i ], '0' + i, ARGLEN );
+        args[ i + 2 ] = calloc( 1, ARGLEN + 1 );
+        memset( args[ i + 2 ], '0' + i, ARGLEN );
     }
-    argv[ ARGC + 1 ] = NULL;
+    args[ ARGC + 2 ] = NULL;
 
-    rc = spawnvpe( P_WAIT, CHILD, argv, NULL );
+    rc = spawnvpe( P_WAIT, args[ 0 ], args, NULL );
 
-    for( i = 1; i <= ARGC; i++ )
-        free( argv[ i ]);
+    TEST_EQUAL_MSG( rc, 0, "PARENT");
 
-    printf("Total length of passing arguments to a child = %d\n",
-           strlen( CHILD ) + ARGC * ARGLEN );
-    printf("spawnvpe() = %d\n", rc );
+    for( i = 0; i < ARGC; i++ )
+        free( args[ i + 2 ]);
+
+    printf("All tests PASSED\n");
 
     return rc;
 }

@@ -1,7 +1,7 @@
 /*
  * mmap( MAP_FIXED ) test program for already allocated case
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -12,11 +12,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <io.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include "test.h"
 
 #include "mmap.h"
 
@@ -35,6 +38,8 @@ int main( void )
 
     int rc = 0;
 
+    printf("Testing mmap( MAP_FIXED ) for allocated memory...\n");
+
     pagesize = getpagesize();
 
     data = malloc( pagesize );
@@ -44,7 +49,7 @@ int main( void )
     for( i = 0; i < pagesize; i++ )
         data[ i ] = i * i;
 
-    fd = open(TESTFILE, O_CREAT | O_RDWR, S_IREAD | S_IWRITE );
+    fd = open( TESTFILE, O_CREAT | O_RDWR, S_IREAD | S_IWRITE );
     if( fd == -1 )
         EXIT( 1, free );
 
@@ -69,19 +74,8 @@ int main( void )
         EXIT( 1, munmap );
     }
 
-    printf("p1 = %p, p2 = %p\n", p1, p2 );
-
-    for( i = 0; i < pagesize; i++ )
-    {
-        if( data[ i ] != p1[ i ])
-        {
-            fprintf(stderr, "Mismatched at %d offset\n", i );
-
-            EXIT( 1, munmap );
-        }
-    }
-
-    printf("PASSED!!!\n");
+    TEST_EQUAL( p2, p1 );
+    TEST_EQUAL( memcmp( p1, p2, pagesize ), 0 );
 
 exit_munmap:
     if( munmap( p1, pagesize ))
@@ -105,6 +99,9 @@ exit_close:
 
 exit_free:
     free( data );
+
+    if( rc == 0 )
+        printf("All tests PASSED\n");
 
     return rc;
 }

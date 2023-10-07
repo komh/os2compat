@@ -1,7 +1,7 @@
 /*
  * _response() test program
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -15,9 +15,15 @@
 #include <string.h>
 #include <process.h>
 
+#include "test.h"
+
 #define LINE_LENGTH ( 1000 * 1000 )
 
+#define CHILD_MAGIC "SPAWN-CHILD"
+
 #define RESPONSE_NAME "_response.rsp"
+
+static char lastChars[] = {'0', '1'};
 
 static void spawn( const char *prog )
 {
@@ -28,31 +34,46 @@ static void spawn( const char *prog )
 
     for( i = 0; i < LINE_LENGTH - 1; i++ )
         fputc('X', f );
-    fputc('0', f );
+    fputc( lastChars[ 0 ], f );
     fputc('\n', f );
 
     for( i = 0; i < LINE_LENGTH - 1; i++ )
         fputc('X', f );
-    fputc('1', f );
+    fputc( lastChars[ 1 ], f );
 
     fclose( f );
 
-    spawnlp( P_WAIT, prog, prog, "@" RESPONSE_NAME, NULL );
+    printf("Testing _response() for a very long line in a response file...\n");
+
+    TEST_EQUAL_MSG( spawnlp( P_WAIT, prog, prog, CHILD_MAGIC,
+                             "@" RESPONSE_NAME, NULL ), 0, "PARENT");
 
     remove( RESPONSE_NAME );
+
+    printf("All tests PASSED\n");
 }
 
 int main( int argc, char *argv[])
 {
-    _response( &argc, &argv );
-
-    if( argc > 1 )
+    if( argc > 1 && !strcmp( argv[ 1 ], CHILD_MAGIC ))
     {
         int i;
 
-        for( i = 0; i < argc; i++ )
-            printf("a length of argv[%d] = %d, the last char = %c\n",
-                   i, strlen( argv[ i ]), argv[ i ][ strlen( argv[ i ]) - 1 ]);
+        _response( &argc, &argv );
+
+        for( i = 2; i < argc; i++ )
+        {
+            int len = strlen( argv[ i ]);
+            char ch = argv[ i ][ len - 1 ];
+
+            printf("Testing a length of argv[%d]...\n", i );
+            TEST_EQUAL_MSG( len, LINE_LENGTH, "CHILD" );
+
+            printf("Testing the last char of argv[%d]...\n", i );
+            TEST_EQUAL_MSG( ch, lastChars[ i - 2 ], "CHILD");
+
+            printf("\n");
+        }
 
         return 0;
     }

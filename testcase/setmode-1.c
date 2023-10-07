@@ -1,7 +1,7 @@
 /*
  * setmode() test program
  *
- * Copyright (C) 2014 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2014-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -14,13 +14,26 @@
 #include <io.h>
 #include <fcntl.h>
 
+#include "test.h"
+
+int test( int fd, const char *name )
+{
+    setmode( fd, O_BINARY );
+
+    TEST_EQUAL_MSG( isatty( fd )
+                    && ( fcntl( fd, F_GETFL ) & O_BINARY ), 0, name );
+
+    return 0;
+}
+
 int main( void )
 {
-    setmode( fileno( stdout ), O_BINARY );
-    setmode( fileno( stderr ), O_BINARY );
+    printf("Testing setmode( O_BINARY ) on a tty...\n");
 
-    fprintf( stderr, "stderr:\nHello, stderr!!!\n");
-    fprintf( stdout, "stdout:\nHello, stdout!!!\n");
+    test( fileno( stdout ), "stdout");
+    test( fileno( stderr ), "stderr");
+
+    printf("All tests PASSED\n");
 
     return 0;
 }

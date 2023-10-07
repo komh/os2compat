@@ -1,7 +1,7 @@
 /*
  * mmap( MAP_SHARED without MAP_ANON ) test program
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -19,6 +19,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <errno.h>
+
+#include "test.h"
 
 #include "mmap.h"
 
@@ -46,6 +48,8 @@ int main( void )
 
     int i;
     int rc = 0;
+
+    printf("Testing mmap( MAP_SHARED without MAP_ANON )...\n");
 
     fd1 = open( TESTFILE1, O_CREAT | O_RDWR | O_BINARY, S_IREAD | S_IWRITE );
     if( fd1 == -1 )
@@ -112,9 +116,7 @@ int main( void )
 
         case 0 :
             me = child;
-            printf("%s: %s: *p2 = %d(%d)\n",
-                   me, *p2 == KEY_PARENT ? "PASSED" : "FAILED",
-                   *p2, KEY_PARENT );
+            TEST_EQUAL_MSG( *p2, KEY_PARENT, me );
 
             *p2 = KEY_CHILD;
             printf("%s: Set *p2 to %d\n", me, *p2 );
@@ -122,9 +124,7 @@ int main( void )
 
         default :
             me = parent;
-            printf("%s: %s: *p1 = %d(%d)\n",
-                   me, *p1 == KEY_CHILD ? "PASSED" : "FAILED",
-                   *p1, KEY_CHILD );
+            TEST_EQUAL_MSG( *p1, KEY_CHILD, me );
 
             *p1 = KEY_PARENT;
             printf("%s: Set *p1 to %d\n", me, *p1 );
@@ -150,8 +150,10 @@ exit_cleanup:
     {
         int i1 = -1;
         int i2 = -1;
+        int status;
 
-        if( waitpid( pid, NULL, 0 ) != pid )
+        if( waitpid( pid, &status, 0 ) != pid
+            || !WIFEXITED( status ) || WEXITSTATUS( status ) != 0 )
         {
             fprintf( stderr, "%s: waitpid( pid ) failed\n", me );
 
@@ -164,8 +166,9 @@ exit_cleanup:
                  || i1 != KEY_PARENT || i2 != KEY_CHILD )
                  rc = 1;
 
-        printf("ALL: %s: i1 = %d(%d), i2 = %d(%d)\n",
-               rc ? "FAILED" : "PASSED", i1, KEY_PARENT, i2, KEY_CHILD );
+        TEST_EQUAL_MSG( rc, 0, me );
+        TEST_EQUAL_MSG( i1, KEY_PARENT, me );
+        TEST_EQUAL_MSG( i2, KEY_CHILD, me );
     }
 
     if( fd2 != -1 && close( fd2 ))
@@ -186,6 +189,9 @@ exit_cleanup:
     {
         remove( TESTFILE1 );
         remove( TESTFILE2 );
+
+        if( rc == 0 )
+            printf("All tests PASSED\n");
     }
 
     return rc;

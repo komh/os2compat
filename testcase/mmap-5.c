@@ -1,7 +1,7 @@
 /*
  * mmap(MAP_FIXED) test program for not allocated case
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This file was modifed from /usr/share/autoconf/autoconf/functions.m4 of
  * autoconf 2.69.
@@ -70,6 +70,8 @@
 #include <stdlib.h>
 #include <io.h>
 
+#include "test.h"
+
 #define RETURN(x)                               \
     do {                                        \
         fprintf (stderr, "Error %d\n", (x));    \
@@ -83,6 +85,8 @@ main ()
   const char *cdata2;
   int i, pagesize;
   int fd, fd2;
+
+  printf("Testing mmap( MAP_FIXED ) for not allocated memory...\n");
 
   pagesize = getpagesize ();
 
@@ -113,7 +117,8 @@ main ()
     RETURN (6);
   for (i = 0; i < pagesize; ++i)
     if (*(data2 + i))
-      RETURN (7);
+      break;
+  TEST_EQUAL(i, pagesize);
   close (fd2);
   if (munmap (data2, pagesize))
     RETURN (8);
@@ -129,7 +134,8 @@ main ()
     RETURN (10);
   for (i = 0; i < pagesize; ++i)
     if (*(data + i) != *(data2 + i))
-      RETURN (11);
+      break;
+  TEST_EQUAL(i, pagesize);
 
   /* Finally, make sure that changes to the mapped area do not
      percolate back to the file as seen by read().  (This is a bug on
@@ -143,9 +149,13 @@ main ()
     RETURN (13);
   for (i = 0; i < pagesize; ++i)
     if (*(data + i) != *(data3 + i))
-      RETURN (14);
+      break;
+  TEST_EQUAL(i, pagesize);
   close (fd);
   remove ("conftest.mmap");
   remove ("conftest.txt");
-  RETURN (0);
+
+  printf("All tests PASSED\n");
+
+  return 0;
 }

@@ -43,11 +43,13 @@ int main( void )
     int fd;
     int pipes[ 2 ];
 
+    printf("Testing ttyname()...\n");
+
     for( test = tests; test->devname; test++ )
     {
         printf("Testing [%s]...\n", test->devname );
 
-        TEST_BOOL(( fd = open( test->devname, test->oflags )) != -1, 1 );
+        TEST_NE( fd = open( test->devname, test->oflags ), -1 );
         TEST_EQUAL( strcmp( ttyname( fd ), test->expected ), 0 );
         close( fd );
 
@@ -57,12 +59,12 @@ int main( void )
     printf("Testing pipes...\n");
 
     TEST_EQUAL( pipe( pipes ), 0 );
-    TEST_BOOL( ttyname( pipes[ 0 ]) == NULL, 1 );
+    TEST_EQUAL( ttyname( pipes[ 0 ]), NULL );
     close( pipes[ 0 ]);
     close( pipes[ 1 ]);
 
     printf("\n");
 
-    printf("All test PASSED\n");
+    printf("All tests PASSED\n");
     return 0;
 }

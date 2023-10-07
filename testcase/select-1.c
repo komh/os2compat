@@ -1,7 +1,7 @@
 /*
  * select() test program
  *
- * Copyright (C) 2021 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2021-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -376,7 +376,7 @@ static void mixedtest( void )
     /* clear a pipe */
     TEST_EQUAL( read( ph[ 0 ], buf, sizeof( buf )), 11 );
 
-    /* time-limit timeout fo a pipe and a socket */
+    /* time-limit timeout for a pipe and a socket */
     args.fd = ph[ 1 ];
     args.delay = 300;
     args.msg = "pipe12345678";
@@ -411,11 +411,15 @@ static void mixedtest( void )
 
 int main( void )
 {
+    printf("Testing select() on sockets and non-sockets...\n");
+
     pipetest();
 
     sockettest();
 
     mixedtest();
+
+    printf("All tests PASSED\n");
 
     return 0;
 }

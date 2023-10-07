@@ -1,7 +1,7 @@
 /*
  * semaphore test program
  *
- * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2016-2023 KO Myung-Hun <komh@chollian.net>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "test.h"
+
 #include "semaphore.h"
 
 void thread( void *arg )
@@ -24,7 +26,7 @@ void thread( void *arg )
 
     printf("Thread %d started!!!\n", _gettid());
 
-    printf("sem_wait() = %d\n", sem_wait( sem ));
+    TEST_EQUAL( sem_wait( sem ), 0 );
 
     printf("Thread %d ended!!!\n", _gettid());
 }
@@ -35,10 +37,12 @@ int main( void )
 
     TID t1, t2;
 
-    printf("sem_init() = %d\n", sem_init( &sem, 0, 0 ));
+    printf("Testing semaphores...\n");
 
-    sem_post( &sem );
-    sem_post( &sem );
+    TEST_EQUAL( sem_init( &sem, 0, 0 ), 0 );
+
+    TEST_EQUAL( sem_post( &sem ), 0 );
+    TEST_EQUAL( sem_post( &sem ), 0 );
 
     t1 = _beginthread( thread, NULL, 1024 * 1024, &sem );
     t2 = _beginthread( thread, NULL, 1024 * 1024, &sem );
@@ -46,7 +50,9 @@ int main( void )
     DosWaitThread( &t1, DCWW_WAIT );
     DosWaitThread( &t2, DCWW_WAIT );
 
-    printf("sem_destroy() = %d\n", sem_destroy( &sem ));
+    TEST_EQUAL( sem_destroy( &sem ), 0 );
+
+    printf("All tests PASSED\n");
 
     return 0;
 }
