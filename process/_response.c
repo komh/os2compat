@@ -25,11 +25,12 @@ static void response_env( void )
 
     key_len = strlen( RSP_ENV_FILE_KEY );
 
-    /* RSP_ENV_FILE_KEY should be the last environmental varaible. */
-    for( env = environ; *env && *( env + 1 ); env++ )
-        /* nothing */;
+    /* find RSP_ENV_FILE_KEY. */
+    for( env = environ; *env; env++ )
+        if( strncmp( *env, RSP_ENV_FILE_KEY, key_len ) == 0 )
+            break;;
 
-    if( !*env   /* environment is empty */
+    if( !*env   /* not found */
         || strncmp( *env, RSP_ENV_FILE_KEY, key_len ) != 0
         || ( *env )[ key_len ] != '='
         || ( *env )[ key_len + 1 ] != '@'
