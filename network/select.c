@@ -167,7 +167,8 @@ static int initpipesems( PSELECTPARM parm, PPIPESEM pipesems, int op )
         {
             DosQueryNPipeInfo( i, 1, pinfo, sizeof( *pinfo ) + 260 );
             snprintf( semname, sizeof( semname ),
-                      "\\SEM32\\%s\\%d", pinfo->szName, op );
+                      "\\SEM32\\OS2COMPAT\\NETWORK\\SELECT\\%s\\%d",
+                      pinfo->szName, op );
 
             hev = NULLHANDLE;
             if(( DosCreateEventSem( semname, &hev, 0, FALSE ) &&
