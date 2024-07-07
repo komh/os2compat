@@ -393,7 +393,7 @@ static void mixedtest( void )
     FD_ZERO( &rdset );
     FD_SET( ph[ 0 ], &rdset );
     FD_SET( socks[ 0 ], &rdset );
-    TEST_EQUAL( select( ph[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
+    TEST_EQUAL( select( socks[ 0 ] + 1, &rdset, NULL, NULL, NULL ), 1 );
     TEST_BOOL( FD_ISSET( ph[ 0 ], &rdset ), 1 );
     TEST_BOOL( FD_ISSET( socks[ 0 ], &rdset ), 0 );
 
