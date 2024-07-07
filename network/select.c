@@ -29,6 +29,8 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 
+#include "socklen_t.h"
+
 /* alias */
 int _std_select( int, fd_set *, fd_set *, fd_set *, struct timeval * );
 
@@ -97,7 +99,8 @@ static int setfd( int fd, PSELECTPARM parms, int op )
     ULONG ulType, ulAttr;
 #endif
     ULONG ulState;
-    int optval, optlen = sizeof( optval );
+    int optval;
+    socklen_t optlen = sizeof( optval );
     int type;
 
     if( fstat( fd, &st ) == -1 )

@@ -37,13 +37,16 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
+#include "socklen_t.h"
+
 #include "poll.h"
 
 static int checkfd( int fd )
 {
     struct stat st;
     ULONG ulState;
-    int optval, optlen = sizeof( optval );
+    int optval;
+    socklen_t optlen = sizeof( optval );
 
     /* invalid handle */
     if( fstat( fd, &st ) == -1 )

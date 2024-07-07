@@ -25,6 +25,8 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 
+#include "socklen_t.h"
+
 #include "xpoll.h"
 
 struct os2compat_xpollset
@@ -103,7 +105,7 @@ static int check_fd( int fd )
     struct stat st;
     ULONG ulState;
     int optval;
-    int optlen = sizeof( optval );
+    socklen_t optlen = sizeof( optval );
 
     /* accept negative fd, but do nothing for it like poll() */
     if( fd < 0 )
