@@ -280,6 +280,14 @@ static void waitsocks( void *arg )
     }
 }
 
+/*
+ * If USE_SELECT_THREAD is defined to 1, then a thread is used for sockets.
+ * If 0, then polling method is used.
+ */
+#ifndef USE_SELECT_THREAD
+#define USE_SELECT_THREAD 1
+#endif
+
 int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
             struct timeval *timeout )
 {
@@ -417,12 +425,18 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
         PSELECTPARM parm = &parms[ ST_PIPE ];
         HMUX hmux;
         SEMRECORD sr;
-        WAITSOCKSARGS wsa;
-        TID tidSock = -1;
+        WAITSOCKSARGS wsa = { NULL, }; /* make compiler happy */
         ULONG ulTimeout;
         ULONG ulUser;
         int err = 0;
         ULONG rc;
+#if USE_SELECT_THREAD
+        TID tidSock = -1;
+#else
+        SELECTPARM selparmsock;
+        struct timeval timedelta = { 0, 10 * 1000 /* 10 ms */};
+        ULONG ulEndtime = 0;
+#endif
 
         /* no wait mode ? */
         if( nowaitmode )
@@ -461,13 +475,38 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
             }
         }
 
+#if !USE_SELECT_THREAD
+        if( nrpipesems + nwpipesems > 0 && hevSock != NULLHANDLE )
+        {
+            if( timeout )
+            {
+                ULONG ulCurtime;
+
+                DosQuerySysInfo( QSV_MS_COUNT, QSV_MS_COUNT,
+                                 &ulCurtime, sizeof( ulCurtime ));
+                ulEndtime = ulCurtime +
+                            timeout->tv_sec * 1000 + timeout->tv_usec / 1000;
+                if( timedelta.tv_usec / 1000 > ulEndtime - ulCurtime )
+                    timedelta.tv_usec = ( ulEndtime - ulCurtime ) * 1000;
+            }
+            else
+                ulEndtime = ( ULONG )-1L;
+
+            timeout = &timedelta;
+        }
+        selparmsock = parms[ ST_SOCKET ];
+
+checkagain:
+        parms[ ST_SOCKET ] = selparmsock;
+#endif
         if( hevSock != NULLHANDLE )
         {
             PSELECTPARM parmsock = &parms[ ST_SOCKET ];
 
             sr.hsemCur = ( HSEM )hevSock;
             sr.ulUser = ( ULONG )hevSock;
-            if( DosAddMuxWaitSem( hmux, &sr ))
+            rc = DosAddMuxWaitSem( hmux, &sr );
+            if( rc != 0 && rc != ERROR_DUPLICATE_HANDLE )
             {
                 err = ENOMEM;
                 goto cleanup_mux;
@@ -496,6 +535,7 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
             }
             else
             {
+#if USE_SELECT_THREAD
                 /* use a thread */
                 tidSock = _beginthread( waitsocks, NULL, 1024 * 1024, &wsa );
                 if( tidSock == -1 )
@@ -503,6 +543,12 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
                     err = errno;
                     goto cleanup_mux;
                 }
+#else
+                wsa.timeout = &nowait;
+
+                /* use polling */
+                waitsocks( &wsa );
+#endif
             }
         }
 
@@ -515,6 +561,26 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
         switch( rc )
         {
             case ERROR_TIMEOUT:
+#if !USE_SELECT_THREAD
+                if( timeout == &timedelta )
+                {
+                    ULONG ulCurtime;
+
+                    if( ulEndtime == ( ULONG )-1L )
+                        goto checkagain;
+
+                    DosQuerySysInfo( QSV_MS_COUNT, QSV_MS_COUNT,
+                                     &ulCurtime, sizeof( ulCurtime ));
+                    if( ulCurtime < ulEndtime )
+                    {
+                        if( timedelta.tv_usec / 1000 > ulEndtime - ulCurtime )
+                            timedelta.tv_usec = ( ulEndtime - ulCurtime ) *
+                                                1000;
+
+                        goto checkagain;
+                    }
+                }
+#endif
                 n = 0;
                 break;
 
@@ -540,7 +606,9 @@ int select( int nfds, fd_set *rdset, fd_set *wrset, fd_set *exset,
                     else if( wsa.err != 0 )
                         err = wsa.err;
 
+#if USE_SELECT_THREAD
                     DosWaitThread( &tidSock, DCWW_WAIT );
+#endif
                 }
 
                 if( err == 0 )
