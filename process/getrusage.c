@@ -10,26 +10,62 @@
  * http://www.wtfpl.net/ for more details.
  */
 
+#define INCL_DOS
+#include <os2.h>
+
 /* OS/2 kLIBC has declarations for getrusage() */
 #include <sys/types.h> /* id_t */
 #include <sys/resource.h>
 
 #include <errno.h>
 #include <string.h>
+#include <process.h>
 
-#include <time.h>
-#include <sys/times.h>
-#include <sys/param.h>
+static int getproctime( PID pid, PULONG pulstime, PULONG pulutime )
+{
+    char buf[ 1024 ];
+    QSPTRREC *pstate;
+    QSPREC *pproc;
+    QSTREC *pthread;
+    ULONG ulstime;
+    ULONG ulutime;
+    int i;
+
+    if( DosQuerySysState( QS_PROCESS, 0, pid, 0, buf, sizeof( buf )))
+    {
+        errno = EINVAL;
+
+        return -1;
+    }
+
+    pstate = ( QSPTRREC * )buf;
+    pproc = pstate->pProcRec;
+    pthread = pproc->pThrdRec;
+    ulstime = 0;
+    ulutime = 0;
+
+    /* Accumulate time of all threads */
+    for( i = pproc->cTCB; i > 0; i-- )
+    {
+        ulstime += pthread->systime;
+        ulutime += pthread->usertime;
+
+        pthread++;
+    }
+
+    *pulstime = ulstime;
+    *pulutime = ulutime;
+
+    return 0;
+}
 
 /**
  * getrusage()
  *
- * @remark Support only user time of a current process(RUSAGE_SELF)
+ * @remark Support RUSAGE_SELF only
  */
 int getrusage (int who, struct rusage *r_usage)
 {
-    struct tms time;
-
     if( who != RUSAGE_SELF && who != RUSAGE_CHILDREN )
     {
         errno = EINVAL;
@@ -40,26 +76,18 @@ int getrusage (int who, struct rusage *r_usage)
     /* Intialize members of struct rusage */
     memset( r_usage, 0, sizeof( *r_usage ));
 
-    if( times( &time ) != ( clock_t )-1 )
+    if( who == RUSAGE_SELF )
     {
-        clock_t u;
-        clock_t s;
+        ULONG ulstime;
+        ULONG ulutime;
 
-        if( who == RUSAGE_CHILDREN )
-        {
-            u = time.tms_cutime;
-            s = time.tms_cstime;
-        }
-        else
-        {
-            u = time.tms_utime;
-            s = time.tms_stime;
-        }
+        if( getproctime( getpid(), &ulstime, &ulutime ) == -1 )
+            return -1;
 
-        r_usage->ru_utime.tv_sec = u / CLK_TCK;
-        r_usage->ru_utime.tv_usec = ( u % CLK_TCK ) * 1000000U / CLK_TCK;
-        r_usage->ru_stime.tv_sec = s / CLK_TCK;
-        r_usage->ru_stime.tv_usec = (s % CLK_TCK ) * 1000000U / CLK_TCK;
+        r_usage->ru_utime.tv_sec = ulutime / 1000;
+        r_usage->ru_utime.tv_usec = ( ulutime % 1000 ) * 1000;
+        r_usage->ru_stime.tv_sec = ulstime / 1000;
+        r_usage->ru_stime.tv_usec = ( ulstime % 1000 ) * 1000;
     }
 
     return 0;
