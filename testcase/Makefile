@@ -97,7 +97,20 @@ BIN_PROGRAMS := mmap-1 \
                 getifaddrs-1 \
                 getifaddrs-2 \
                 spawn2-1 \
-                spawn2-2 
+                spawn2-2 \
+                gltests/test-posix_spawn-chdir \
+                gltests/test-posix_spawn-dup2-stdin \
+                gltests/test-posix_spawn-dup2-stdout \
+                gltests/test-posix_spawn-fchdir \
+                gltests/test-posix_spawn-open1 \
+                gltests/test-posix_spawn-open2 \
+                gltests/test-posix_spawn-script \
+                gltests/test-posix_spawnp-script \
+                gltests/test-posix_spawn_file_actions_addchdir \
+                gltests/test-posix_spawn_file_actions_addclose \
+                gltests/test-posix_spawn_file_actions_adddup2 \
+                gltests/test-posix_spawn_file_actions_addfchdir \
+                gltests/test-posix_spawn_file_actions_addopen
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -177,6 +190,47 @@ spawn2-1_CFLAGS := -I../process
 
 spawn2-2_SRCS := spawn2-2.c ../process/spawn2.c
 spawn2-2_CFLAGS := -I../process
+
+POSIX_SPAWN_SRCS := $(wildcard ../process/posix_spawn/spawn*.c) ../process/spawn2.c
+
+gltests/test-posix_spawn-chdir_SRCS := gltests/test-posix_spawn-chdir.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn-chdir_CFLAGS := -I../process
+
+gltests/test-posix_spawn-dup2-stdin_SRCS := gltests/test-posix_spawn-dup2-stdin.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn-dup2-stdin_CFLAGS := -I../process
+
+gltests/test-posix_spawn-dup2-stdout_SRCS := gltests/test-posix_spawn-dup2-stdout.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn-dup2-stdout_CFLAGS := -I../process
+
+gltests/test-posix_spawn-fchdir_SRCS := gltests/test-posix_spawn-fchdir.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn-fchdir_CFLAGS := -I../process
+
+gltests/test-posix_spawn-open1_SRCS := gltests/test-posix_spawn-open1.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn-open1_CFLAGS := -I../process
+
+gltests/test-posix_spawn-open2_SRCS := gltests/test-posix_spawn-open2.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn-open2_CFLAGS := -I../process
+
+gltests/test-posix_spawn-script_SRCS := gltests/test-posix_spawn-script.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn-script_CFLAGS := -I../process
+
+gltests/test-posix_spawnp-script_SRCS := gltests/test-posix_spawnp-script.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawnp-script_CFLAGS := -I../process
+
+gltests/test-posix_spawn_file_actions_addchdir_SRCS := gltests/test-posix_spawn_file_actions_addchdir.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn_file_actions_addchdir_CFLAGS := -I../process
+
+gltests/test-posix_spawn_file_actions_addclose_SRCS := gltests/test-posix_spawn_file_actions_addclose.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn_file_actions_addclose_CFLAGS := -I../process
+
+gltests/test-posix_spawn_file_actions_adddup2_SRCS := gltests/test-posix_spawn_file_actions_adddup2.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn_file_actions_adddup2_CFLAGS := -I../process
+
+gltests/test-posix_spawn_file_actions_addfchdir_SRCS := gltests/test-posix_spawn_file_actions_addfchdir.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn_file_actions_addfchdir_CFLAGS := -I../process
+
+gltests/test-posix_spawn_file_actions_addopen_SRCS := gltests/test-posix_spawn_file_actions_addopen.c $(POSIX_SPAWN_SRCS)
+gltests/test-posix_spawn_file_actions_addopen_CFLAGS := -I../process
 
 # 1. specify a list of libraries without an extension with
 #

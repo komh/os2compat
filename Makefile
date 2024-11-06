@@ -139,7 +139,7 @@ BIN_PROGRAMS :=
 
 BIN_LIBRARIES := os2compat
 
-os2compat_DIRS := io memory network process thread
+os2compat_DIRS := io memory network process thread process/posix_spawn
 os2compat_SRCS := $(foreach d,$(os2compat_DIRS),$(wildcard $(d)/*.c))
 os2compat_LIB  := 1
 os2compat_DLL  := 1
@@ -177,6 +177,7 @@ HEADER_FILES := include/os2compat/dirent.h \
                 include/os2compat/poll.h \
                 include/os2compat/semaphore.h \
                 include/os2compat/sched.h \
+                include/os2compat/spawn.h \
                 include/os2compat/spawn2.h \
                 include/os2compat/net/if.h \
                 include/os2compat/sys/mman.h \
@@ -194,6 +195,7 @@ PRIV_HEADER_FILES := io/scandir.h \
                      network/socklen_t.h \
                      network/xpoll.h \
                      process/spawn2.h \
+                     process/posix_spawn/posix_spawn.h \
                      thread/semaphore.h \
                      thread/sched_yield.h
 

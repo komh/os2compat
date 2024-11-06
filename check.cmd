@@ -68,6 +68,24 @@ call checkCC 'network/getifaddrs.h', 'network/getifaddrs.c', ,
 call checkCC 'process/spawn2.h', 'process/spawn2.c', ,
              'spawn2ve( 0, 0, 0, 0, 0, 0 );' || g.sNl ||,
              'spawn2vpe( 0, 0, 0, 0, 0, 0 );';
+call checkCC 'process/posix_spawn/posix_spawn.h', ,
+             'process/posix_spawn/spawn_faction_addchdir.c',
+             'process/posix_spawn/spawn_faction_init.c', ,
+             'posix_spawn_file_actions_addchdir( 0, 0 );';
+call checkCC 'process/posix_spawn/posix_spawn.h', ,
+             'process/posix_spawn/spawn_faction_addfchdir.c',
+             'process/posix_spawn/spawn_faction_init.c', ,
+             'posix_spawn_file_actions_addfchdir( 0, 0 );';
+call checkCC 'spawn.h', ,
+             'process/posix_spawn/spawne.c',
+             'process/posix_spawn/spawni.c',
+             'process/spawn2.c', ,
+             'posix_spawn( 0, 0, 0, 0, 0, 0 );';
+call checkCC 'spawn.h', ,
+             'process/posix_spawn/spawnpe.c',
+             'process/posix_spawn/spawni.c',
+             'process/spawn2.c', ,
+             'posix_spawnp( 0, 0, 0, 0, 0, 0 );';
 
 call checkOS2CompatHeader;
 
@@ -136,6 +154,7 @@ checkOS2CompatHeader: procedure expose G.
                    'include/os2compat/poll.h',
                    'include/os2compat/semaphore.h',
                    'include/os2compat/sched.h',
+                   'include/os2compat/spawn.h',
                    'include/os2compat/spawn2.h',
                    'include/os2compat/net/if.h',
                    'include/os2compat/sys/mman.h',
@@ -152,6 +171,7 @@ checkOS2CompatHeader: procedure expose G.
                        'network/socklen_t.h',
                        'network/xpoll.h',
                        'process/spawn2.h',
+                       'process/posix_spawn/posix_spawn.h',
                        'thread/semaphore.h',
                        'thread/sched_yield.h';
     sDestDir = 'include/os2compat/priv';
