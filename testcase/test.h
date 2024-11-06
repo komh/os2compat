@@ -104,6 +104,12 @@
         }                                                                   \
    } while( 0 )
 
+#define TEST_START( msg )                                                   \
+    printf("Testing %s...\n", ( msg ))
+
+#define TEST_END()                                                          \
+    printf("\n")
+
 #define TEST_ALL_PASSED()                                                   \
     printf("All tests PASSED.\n")
 
