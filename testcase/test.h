@@ -1,7 +1,7 @@
 /*
  * Test macros for OS2COMPAT testcase
  *
- * Copyright (C) 2021 KO Myung-Hun <komh@chollian.net>
+ * Copyright (C) 2021-2024 KO Myung-Hun <komh78@gmail.com>
  *
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
@@ -18,7 +18,7 @@
 #define TEST_EQ     TEST_EQUAL
 #define TEST_EQ_MSG TEST_EQUAL_MSG
 #define TEST_NE     TEST_NOT_EQUAL
-#define TEST_NE_MSG TEST_NOT_EUQAL_MSG
+#define TEST_NE_MSG TEST_NOT_EQUAL_MSG
 
 #define TEST_EQUAL( expr, expectd )                                         \
     do {                                                                    \
