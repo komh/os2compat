@@ -104,4 +104,7 @@
         }                                                                   \
    } while( 0 )
 
+#define TEST_ALL_PASSED()                                                   \
+    printf("All tests PASSED.\n")
+
 #endif
