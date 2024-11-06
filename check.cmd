@@ -65,6 +65,9 @@ call checkCC 'network/getifaddrs.h', 'network/getifaddrs.c', ,
              'struct ifaddrs *ifa;' || g.sNl ||,
              'getifaddrs( &ifa );' || g.sNl ||,
              'freeifaddrs( ifa );';
+call checkCC 'process/spawn2.h', 'process/spawn2.c', ,
+             'spawn2ve( 0, 0, 0, 0, 0, 0 );' || g.sNl ||,
+             'spawn2vpe( 0, 0, 0, 0, 0, 0 );';
 
 call checkOS2CompatHeader;
 
@@ -133,6 +136,7 @@ checkOS2CompatHeader: procedure expose G.
                    'include/os2compat/poll.h',
                    'include/os2compat/semaphore.h',
                    'include/os2compat/sched.h',
+                   'include/os2compat/spawn2.h',
                    'include/os2compat/net/if.h',
                    'include/os2compat/sys/mman.h',
                    'include/os2compat/sys/socket.h',
@@ -147,6 +151,7 @@ checkOS2CompatHeader: procedure expose G.
                        'network/shutdown.h',
                        'network/socklen_t.h',
                        'network/xpoll.h',
+                       'process/spawn2.h',
                        'thread/semaphore.h',
                        'thread/sched_yield.h';
     sDestDir = 'include/os2compat/priv';

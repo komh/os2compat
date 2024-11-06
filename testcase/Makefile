@@ -95,7 +95,9 @@ BIN_PROGRAMS := mmap-1 \
                 execvpe-1 \
                 ttyname-1 \
                 getifaddrs-1 \
-                getifaddrs-2
+                getifaddrs-2 \
+                spawn2-1 \
+                spawn2-2 
 
 mmap-1_SRCS   := mmap-1.c ../memory/mmap.c
 mmap-1_CFLAGS := -I../memory
@@ -169,6 +171,12 @@ getifaddrs-1_CFLAGS := -I../network
 
 getifaddrs-2_SRCS := getifaddrs-2.c ../network/getifaddrs.c
 getifaddrs-2_CFLAGS := -I../network
+
+spawn2-1_SRCS := spawn2-1.c ../process/spawn2.c
+spawn2-1_CFLAGS := -I../process
+
+spawn2-2_SRCS := spawn2-2.c ../process/spawn2.c
+spawn2-2_CFLAGS := -I../process
 
 # 1. specify a list of libraries without an extension with
 #
