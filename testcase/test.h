@@ -67,11 +67,11 @@
         int TEST_expr = ( int )( expr );                                    \
         int TEST_expected = ( int )( expectd );                             \
         if( TEST_expr == TEST_expected )                                    \
-            fprintf( stderr, "PASSED: %s: %d: %s = %d\n",                   \
-                     ( msg ), __LINE__, #expr, TEST_expr );                 \
+            fprintf( stderr, "PASSED: %d: %s: %s = %d\n",                   \
+                     __LINE__, ( msg ), #expr, TEST_expr );                 \
         else {                                                              \
-            fprintf( stderr, "FAILED: %s: %d: %s = %d, Expected = %d\n",    \
-                     ( msg ), __LINE__, #expr, TEST_expr, TEST_expected );  \
+            fprintf( stderr, "FAILED: %d: %s: %s = %d, Expected = %d\n",    \
+                     __LINE__, ( msg ), #expr, TEST_expr, TEST_expected );  \
             abort();                                                        \
         }                                                                   \
    } while( 0 )
@@ -81,11 +81,11 @@
         int TEST_expr = ( int )( expr );                                    \
         int TEST_expected = ( int )( expectd );                             \
         if( TEST_expr != TEST_expected )                                    \
-            fprintf( stderr, "PASSED: %s: %d: %s != %d\n",                  \
-                     ( msg ), __LINE__,  #expr, TEST_expected );            \
+            fprintf( stderr, "PASSED: %d: %s: %s != %d\n",                  \
+                     __LINE__, ( msg ), #expr, TEST_expected );             \
         else {                                                              \
-            fprintf( stderr, "FAILED: %s: %d: %s = %d, Expected != %d\n",   \
-                     ( msg ), __LINE__, #expr, TEST_expr, TEST_expected );  \
+            fprintf( stderr, "FAILED: %d: %s: %s = %d, Expected != %d\n",   \
+                     __LINE__, ( msg ), #expr, TEST_expr, TEST_expected );  \
             abort();                                                        \
         }                                                                   \
    } while( 0 )
@@ -95,11 +95,11 @@
         int TEST_expr = !!( expr );                                         \
         int TEST_expected = ( int )( expectd );                             \
         if( TEST_expr == TEST_expected )                                    \
-            fprintf( stderr, "PASSED: %s: %d: %s = %d\n",                   \
-                     ( msg ), __LINE__,  #expr, TEST_expr );                \
+            fprintf( stderr, "PASSED: %d: %s: %s = %d\n",                   \
+                     __LINE__, ( msg ), #expr, TEST_expr );                 \
         else {                                                              \
-            fprintf( stderr, "FAILED: %s: %d: %s = %d, Expected = %d\n",    \
-                     ( msg ), __LINE__, #expr, TEST_expr, TEST_expected );  \
+            fprintf( stderr, "FAILED: %d: %s: %s = %d, Expected = %d\n",    \
+                     __LINE__, ( msg ), #expr, TEST_expr, TEST_expected );  \
             abort();                                                        \
         }                                                                   \
    } while( 0 )
