@@ -49,6 +49,9 @@ static void test( int ( *sel )(/* const */ struct dirent * ),
 
         TEST_EQUAL( i, n );
 
+        for( i = 0; i < n; i++ )
+            free( namelist[ i ]);
+
         free( namelist );
     }
 
